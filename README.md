@@ -1,0 +1,2 @@
+# instlux
+Windows openSUSE installer
