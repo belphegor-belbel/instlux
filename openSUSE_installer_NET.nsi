@@ -317,7 +317,7 @@ Section "Install"
     FileWrite $R1 "[Windows]$\r$\n"
     FileWrite $R1 "shell=io.sys$\r$\n$\r$\n"
     FileWrite $R1 "[openSUSE installer]$\r$\n"
-    FileWrite $R1 "install=grub.exe"
+    FileWrite $R1 "install=grub.exe --config-file=(hd0,0)/menu.lst"
     FileSeek $R1 0 END
     FileClose $R1
   ${ElseIf} $R0 == 'nt'
