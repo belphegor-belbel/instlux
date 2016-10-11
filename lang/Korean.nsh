@@ -14,3 +14,5 @@
 !insertmacro LANG_STRING STRING_DOWNLOADERROR_R2 "Download error: $0 (URL: $R2)"
 !insertmacro LANG_STRING STRING_BCDEDIT_ERROR "Cannot exec '$BcdEdit'"
 !insertmacro LANG_STRING STRING_NOTSUPPORTED_OS "This operating system is not currently supported by the installer."
+!insertmacro LANG_STRING STRING_VERSIONOFTHISMEDIA "The version of this media"
+!insertmacro LANG_STRING STRING_NOTEXISTONMEDIA "This installation media does not support this architecture."
