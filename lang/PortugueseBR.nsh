@@ -16,3 +16,4 @@
 !insertmacro LANG_STRING STRING_NOTSUPPORTED_OS "This operating system is not currently supported by the installer."
 !insertmacro LANG_STRING STRING_VERSIONOFTHISMEDIA "The version of this media"
 !insertmacro LANG_STRING STRING_NOTEXISTONMEDIA "This installation media does not support this architecture."
+!insertmacro LANG_STRING STRING_NOPOWERSHELL "PowerShell is not installed. Please run $R0 after openSUSE installation has been completed in Windows (it will clean up installation environment)."

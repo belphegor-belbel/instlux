@@ -28,6 +28,7 @@ ShowUninstDetails "nevershow"
 AllowRootDirInstall true
 InstallDir "C:\openSUSE"
 XPStyle on
+SetCompressor /SOLID lzma
 
 !define MUI_ICON "opensuse.ico"
 !define MUI_UNICON "opensuse.ico"
@@ -465,9 +466,16 @@ Section "Install"
     # but uninstaller is not installed to $SMSTARTUP directly;
     # this is due to UAC ("RunAs" required).
     WriteUninstaller "C:\openSUSE-uninst.exe"
+
+    IfFileExists "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe" 0 lbl_nopowershell
     CreateShortcut "$SMSTARTUP\openSUSE setup uninstaller.lnk" \
       "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe" \
       "Start-Process C:\openSUSE-uninst.exe -Verb RunAs"
+    Goto lbl_powershelldone
+lbl_nopowershell:
+    StrCpy $R0 "C:\openSUSE-uninst.exe"
+    MessageBox MB_OK|MB_ICONEXCLAMATION $(STRING_NOPOWERSHELL)
+lbl_powershelldone:
 
     # check registry if boot ID was already generated or not
     ReadRegStr $0 HKLM "Software\openSUSE\openSUSE-Installer Loader" "bootmgr"
@@ -574,7 +582,7 @@ lblID:
   ${ElseIf} $0 == 1600
     StrCpy $R5 "0x31E"
   ${ElseIf} $0 == 1920
-    # 16bit is not available for this resolutions
+    # 16bit is not available for this resolution
     StrCpy $R5 "0x37D"
   ${Else}
     # if unknown
