@@ -106,7 +106,7 @@ Function .onInit
   System::Free $1
   System::Int64Op $4 >> 20 ; (to [MB])
   Pop $4
-  StrCpy $R0 1024
+  StrCpy $R0 1000
   ${If} $4 L< $R0
     MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION $(STRING_INSUFFICIENT_MEMORY) \
       IDOK lbl_lowmemoryok
