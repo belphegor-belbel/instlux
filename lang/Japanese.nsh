@@ -17,3 +17,5 @@
 !insertmacro LANG_STRING STRING_VERSIONOFTHISMEDIA "このメディアにあるバージョン"
 !insertmacro LANG_STRING STRING_NOTEXISTONMEDIA "このインストールメディアはこのアーキテクチャには対応していません。"
 !insertmacro LANG_STRING STRING_NOPOWERSHELL "PowerShell がインストールされていません。 openSUSE のインストールが完了したら、 Windows 側で $R0 を実行してください (インストール環境をクリーンアップします) 。"
+!insertmacro LANG_STRING STRING_INSUFFICIENT_MEMORY "システムメモリが不足しています ($R0 [MB] ほど必要ですが $4 [MB] しか搭載されていません) 。$\r$\nこのまま進めても、 openSUSE のインストールが失敗する可能性があります。$\r$\nメモリを追加するか、もしくは https://ja.opensuse.org/SDB:少ないメモリ環境でのインストール ('OK' を押すと表示されます) をご覧ください。"
+!insertmacro LANG_STRING STRING_URL_INSUFFICIENT_MEMORY "https://ja.opensuse.org/SDB:少ないメモリ環境でのインストール"

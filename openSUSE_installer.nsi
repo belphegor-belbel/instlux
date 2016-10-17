@@ -99,6 +99,22 @@ Function .onInit
   InitPluginsDir
   File /oname=$PLUGINSDIR\DistributionSelection.ini "DistributionSelection.ini"
 
+  ; check RAM (see http://nsis.sourceforge.net/Docs/System/System.html)
+  System::Call "*(i 64,i,l,l,l,l,l,l,l)p.r1"
+  System::Call "Kernel32::GlobalMemoryStatusEx(p r1)"
+  System::Call "*$1(i.r2, i.r3, l.r4)"
+  System::Free $1
+  System::Int64Op $4 >> 20 ; (to [MB])
+  Pop $4
+  StrCpy $R0 1024
+  ${If} $4 L< $R0
+    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION $(STRING_INSUFFICIENT_MEMORY) \
+      IDOK lbl_lowmemoryok
+    Quit
+lbl_lowmemoryok:
+    ExecShell "open" "$(STRING_URL_INSUFFICIENT_MEMORY)"
+  ${EndIf}
+
   ; if running in X64, bcdedit is in %windir%\Sysnative.
   ${If} ${RunningX64}
     ExpandEnvStrings $bcdedit "%windir%\Sysnative\bcdedit"

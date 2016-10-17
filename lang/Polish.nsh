@@ -17,3 +17,5 @@
 !insertmacro LANG_STRING STRING_VERSIONOFTHISMEDIA "The version of this media"
 !insertmacro LANG_STRING STRING_NOTEXISTONMEDIA "This installation media does not support this architecture."
 !insertmacro LANG_STRING STRING_NOPOWERSHELL "PowerShell is not installed. Please run $R0 after openSUSE installation has been completed in Windows (it will clean up installation environment)."
+!insertmacro LANG_STRING STRING_INSUFFICIENT_MEMORY "This computer has insufficient system memory ($R0 [MB] required but has $4 [MB]).$\r$\nopenSUSE installation may fail when proceed.$\r$\nPlease add more memory or consult https://en.opensuse.org/SDB:Installation_with_little_memory (Push 'OK' to open and proceed)."
+!insertmacro LANG_STRING STRING_URL_INSUFFICIENT_MEMORY "https://en.opensuse.org/SDB:Installation_with_little_memory"
