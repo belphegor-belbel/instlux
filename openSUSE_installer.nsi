@@ -106,7 +106,17 @@ Function .onInit
   System::Free $1
   System::Int64Op $4 >> 20 ; (to [MB])
   Pop $4
-  StrCpy $R0 1000
+  StrCpy $R0 1
+  ${If} $4 L< $R0
+    ; if no memory is detected, try again with "GlobalMemoryStatus"
+    System::Call "*(i,i,p,p,p,p,p,p)p.r1"
+    System::Call "Kernel32::GlobalMemoryStatus(p r1)"
+    System::Call "*$1(i.r2, i.r3, p.r4)"
+    System::Free $1
+    IntOp $4 $4 >> 20 ; (to [MB])
+  ${EndIf}
+
+  StrCpy $R0 768
   ${If} $4 L< $R0
     MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION $(STRING_INSUFFICIENT_MEMORY) \
       IDOK lbl_lowmemoryok
