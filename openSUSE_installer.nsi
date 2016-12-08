@@ -240,7 +240,7 @@ Function "ShowDistributionSelection"
     ${OrIf} $mediaX86_64 == "0"
       ; set the latest stable version
       WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-        "Field 2" "State" "openSUSE Leap 42.1"
+        "Field 2" "State" "openSUSE Leap 42.2"
       StrCpy $R1 ""
     ${Else}
       ; set the version of this media
@@ -252,7 +252,7 @@ Function "ShowDistributionSelection"
     ; set currently supported versions
     WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
       "Field 2" "ListItems" \
-      "$R1openSUSE Leap 42.2|openSUSE Leap 42.1|openSUSE 13.2|openSUSE Tumbleweed"
+      "$R1openSUSE Leap 42.2|openSUSE Leap 42.1|openSUSE 13.2|openSUSE 13.1|openSUSE 12.3|openSUSE 12.2|openSUSE 12.1|openSUSE 11.4|openSUSE Tumbleweed"
   ${Else}
     ; when x86_64 is not supported..
 
@@ -272,7 +272,7 @@ Function "ShowDistributionSelection"
     ; set currently supported versions
     WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
       "Field 2" "ListItems" \
-      "$R1openSUSE 13.2|openSUSE Tumbleweed"
+      "$R1openSUSE 13.2|openSUSE 13.1|openSUSE 12.3|openSUSE 12.2|openSUSE 12.1|openSUSE 11.4|openSUSE Tumbleweed"
 
     ; remove x86_64
     WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
