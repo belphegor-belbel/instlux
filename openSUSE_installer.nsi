@@ -11,11 +11,14 @@
 Var hwnd
 Var distribution
 Var architecture
+Var environment
 Var bcdedit
 Var instsource
 Var mediaVer
 Var mediaI386
 Var mediaX86_64
+Var dirVirt
+Var dirVM
 
 ; -----------------------------------------------------------------------------
 ; General settings
@@ -93,12 +96,8 @@ Page custom "ShowDistributionSelection" "LeaveDistributionSelection"
 !insertmacro LANG_LOAD "Polish"
 
 ; -----------------------------------------------------------------------------
-; initialize function
-
-Function .onInit
-  InitPluginsDir
-  File /oname=$PLUGINSDIR\DistributionSelection.ini "DistributionSelection.ini"
-
+; get system memory function
+Function "GetSystemMemoryInfo"
   ; check RAM (see http://nsis.sourceforge.net/Docs/System/System.html)
   System::Call "*(i 64,i,l,l,l,l,l,l,l)p.r1"
   System::Call "Kernel32::GlobalMemoryStatusEx(p r1)"
@@ -115,7 +114,16 @@ Function .onInit
     System::Free $1
     IntOp $4 $4 >> 20 ; (to [MB])
   ${EndIf}
+FunctionEnd
 
+; -----------------------------------------------------------------------------
+; initialize function
+
+Function .onInit
+  InitPluginsDir
+  File /oname=$PLUGINSDIR\DistributionSelection.ini "DistributionSelection.ini"
+
+  Call GetSystemMemoryInfo
   StrCpy $R0 768
   ${If} $4 L< $R0
     MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION $(STRING_INSUFFICIENT_MEMORY) \
@@ -135,19 +143,6 @@ lbl_lowmemoryok:
   ; check bootloader
   Call CheckBootloader
   Pop $R0
-
-  ${If} $R0 == 'vista'
-    ; check whether UEFI boot mode is activated or not
-    ExpandEnvStrings $0 %COMSPEC%
-    nsExec::ExecToStack '"$0" /C "$bcdedit /enum bootmgr | findstr /I ^path | findstr /I \.efi$$"'
-    Pop $1
-    Pop $1
-    StrLen $0 $1
-    ${If} $0 > 0
-      MessageBox MB_OK|MB_ICONSTOP $(STRING_REFUSE_UEFI)
-      Quit
-    ${EndIf}
-  ${EndIf}
 
   ${If} $R0 == 'vista'
   ${OrIf} $R0 == 'nt'
@@ -232,6 +227,14 @@ Function "ShowDistributionSelection"
     "Field 1" "Text" $(STRING_VERSION)
   WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
     "Field 3" "Text" $(STRING_ARCHITECTURE)
+  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
+    "Field 5" "Text" $(STRING_ENVIRONMENT)
+  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
+    "Field 6" "ListItems" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)|$(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)"
+  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
+    "Field 6" "State" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)"
+  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
+    "Field 7" "State" $(STRING_DISTSELECTIONDESCRIPTION)
 
   ${If} $0 == "x86_64"
     ; when x86_64 is supported..
@@ -295,6 +298,8 @@ Function "LeaveDistributionSelection"
     "Field 2" "State"
   ReadIniStr $architecture "$PLUGINSDIR\DistributionSelection.ini" \
     "Field 4" "State"
+  ReadIniStr $environment "$PLUGINSDIR\DistributionSelection.ini" \
+    "Field 6" "State"
 
   StrCpy $0 $distribution 14
   ${If} $0 == "openSUSE Leap "
@@ -318,6 +323,201 @@ Function "LeaveDistributionSelection"
       ${If} $architecture == "x86_64"
       ${AndIf} $mediaX86_64 == "0"
         MessageBox MB_OK|MB_ICONSTOP $(STRING_NOTEXISTONMEDIA)
+        Abort
+      ${EndIf}
+    ${EndIf}
+  ${EndIf}
+
+  ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)
+    ; check operating system (Windows XP or later required)
+    ReadRegStr $R0 HKLM \
+      "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+    IfErrors 0 lbl_winnt
+    MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOX_OSFAILED)
+    Abort
+
+lbl_winnt:
+    StrCpy $R1 $R0 1
+    ${If} $R1 S< '5'
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOX_OSFAILED)
+      Abort
+    ${EndIf}
+
+    ; check memory (2GB or more needed)
+    Call GetSystemMemoryInfo
+    StrCpy $R0 2048
+    ${If} $4 L< $R0
+      MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION $(STRING_INSUFFICIENT_MEMORY) \
+        IDOK lbl_lowmemoryok
+      Quit
+lbl_lowmemoryok:
+      ExecShell "open" "$(STRING_URL_INSUFFICIENT_MEMORY)"
+    ${EndIf}
+
+    ; check free storage (8GB or more needed)
+    ; ###TODO###
+
+    ; check powershell (required for later procedure)
+    IfFileExists "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe" lbl_powershell
+    MessageBox MB_OK|MB_ICONSTOP $(STRING_NOPOWERSHELLVIRTUALBOX)
+    Abort
+lbl_powershell:
+
+    ; read registry whether VirtualBox is installed or not
+    ReadRegStr $0 HKCR "progId_VirtualBox.Shell.vbox\shell\open\command" ""
+    ${If} $0 == ""
+      ; VirtualBox is not installed; download and install.
+      MessageBox MB_OKCANCEL|MB_ICONQUESTION \
+        $(STRING_VIRTUALBOXINSTALLATIONCONFIRM) \
+          IDOK lbl_installvbox
+          Abort
+lbl_installvbox:
+      ; check the latest version
+      ; (NSISdl cannot be used because it does not support HTTPS...)
+      ; (nsExec::Exec cannot be used for powershell)
+      StrCpy $R1 "https://update.virtualbox.org/query.php?platform=WINDOWS_32BITS_GENERIC&version=1.0.0"
+      ExecWait "$\"$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe$\" (new-object System.Net.WebClient).Downloadfile(\$\"$R1\$\", \$\"$TEMP\vbox-latest.txt\$\")"
+      Pop $0
+      ${IfNot} $0 == ""
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_DOWNLOADERROR_R1)
+        Abort
+      ${EndIf}
+
+      FileOpen $R1 "$TEMP\vbox-latest.txt" r
+      FileRead $R1 $R2
+      FileClose $R1
+
+      StrCpy $1 0
+lbl_loopinstallvboxspace:
+      StrCpy $2 $R2 1 $1
+      IntOp $1 $1 + 1
+      StrCmp $2 "" lbl_loopinstallvboxnotspace
+      StrCmp $2 " " 0 lbl_loopinstallvboxspace
+lbl_loopinstallvboxnotspace:
+      StrCpy $2 $R2 1 $1
+      IntOp $1 $1 + 1
+      StrCmp $2 " " lbl_loopinstallvboxnotspace
+
+      IntOp $1 $1 - 1
+      StrCpy $R1 $R2 1024 $1
+      Delete "$TEMP\vbox-latest.txt"
+
+      ExecWait "$\"$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe$\" Start-BitsTransfer -Source \$\"$R1\$\" -Destination \$\"$TEMP\vbox.exe\$\""
+      Pop $0
+      ${IfNot} $0 == ""
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_DOWNLOADERROR_R1)
+        Abort
+      ${EndIf}
+
+      ExecWait "$\"$TEMP\vbox.exe$\"" $0
+      ${IfNot} $0 == "0"
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOXINSTALLATIONFAILED)
+        Abort
+      ${EndIf}
+      Delete "$\"$TEMP\vbox.exe$\""
+    ${EndIf}
+
+    ; read registry again
+    ReadRegStr $R2 HKCR "progId_VirtualBox.Shell.vbox\shell\open\command" ""
+    ${If} $0 == ""
+      ; VirtualBox installation failed; abort.
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOXINSTALLATIONFAILED)
+      Abort
+    ${EndIf}
+
+    ; set $dirVirt
+    StrCpy $1 $R2 1
+    ${If} $1 == "$\""
+      StrCpy $R3 1
+lbl_loopquote:
+      IntOp $R3 $R3 + 1
+      StrCpy $R4 $R2 1 $R3
+      StrCmp $R4 "$\"" lbl_loopquoteexit
+      StrCmp $R4 "" lbl_loopquoteexit
+      Goto lbl_loopquote
+lbl_loopquoteexit:
+
+      IntOp $R3 $R3 - 1
+      StrCpy $dirVirt $R2 $R3 1
+    ${Else}
+      StrCpy $R3 0
+lbl_loopspace:
+      IntOp $R3 $R3 + 1
+      StrCpy $R4 $R2 1 $R3
+      StrCmp $R4 " " lbl_loopspaceexit
+      StrCmp $R4 "" lbl_loopspaceexit
+      Goto lbl_loopspace
+lbl_loopspaceexit:
+
+      StrCpy $dirVirt $R2 $R3 0
+    ${EndIf}
+
+    ; remove last "\" and followings
+    StrLen $R3 $dirVirt
+lbl_loopremove:
+    IntOp $R3 $R3 - 1
+    StrCpy $R4 $dirVirt 1 $R3
+    StrCmp $R4 "\" lbl_loopremoveexit
+    StrCmp $R4 "" lbl_loopremoveexit
+    Goto lbl_loopremove
+lbl_loopremoveexit:
+
+    StrCpy $dirVirt $dirVirt $R3
+
+    ; set $dirVM
+    nsExec::Exec "cmd /C $\"$dirVirt\VBoxManage.exe$\" list systemproperties > $TEMP\vbox_system_prop.txt"
+    FileOpen $R1 "$TEMP\vbox_system_prop.txt" r
+    Pop $0
+lbl_loopreadvboxprop:
+    FileRead $R1 $R2
+    StrCmp $R2 "" lbl_loopreadvboxpropexit
+    StrCpy $R3 $R2 23 0
+    StrCmp $R3 "Default machine folder:" lbl_loopreadvboxpropexit
+    Goto lbl_loopreadvboxprop
+lbl_loopreadvboxpropexit:
+
+    ${If} $R3 == "Default machine folder:"
+      StrCpy $R4 23
+lbl_loopvboxpropspace:
+      IntOp $R4 $R4 + 1
+      StrCpy $R5 $R2 1 $R4
+      StrCmp $R5 " " lbl_loopvboxpropspace
+      StrCmp $R5 "\t" lbl_loopvboxpropspace
+
+      StrCpy $dirVM $R2 1024 $R4
+
+      StrLen $R4 $dirVM
+lbl_loopvboxpropcrlf:
+      IntOp $R4 $R4 - 1
+      StrCpy $R5 $dirVM 1 $R4
+      StrCmp $R5 "$\r" lbl_loopvboxpropcrlf
+      StrCmp $R5 "$\n" lbl_loopvboxpropcrlf
+
+      IntOp $R4 $R4 + 1
+      StrCpy $dirVM $dirVM $R4 0
+    ${Else}
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOXINSTALLATIONFAILED)
+      Abort
+    ${EndIf}
+
+    FileClose $R1
+    Delete "$TEMP\vbox_system_prop.txt"
+
+    CreateDirectory $dirVM
+  ${Else}
+    ; check bootloader when install to real (i.e. not virtual) machine
+    Call CheckBootloader
+    Pop $R0
+
+    ${If} $R0 == 'vista'
+      ; check whether UEFI boot mode is activated or not
+      ExpandEnvStrings $0 %COMSPEC%
+      nsExec::ExecToStack '"$0" /C "$bcdedit /enum bootmgr | findstr /I ^path | findstr /I \.efi$$"'
+      Pop $1
+      Pop $1
+      StrLen $0 $1
+      ${If} $0 > 0
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_REFUSE_UEFI)
         Abort
       ${EndIf}
     ${EndIf}
@@ -377,6 +577,98 @@ FunctionEnd ; "CheckBootloader"
 
 Section "Install"
   SectionIn RO
+
+  ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)
+    ; download NET iso
+    ${If} $architecture == "i386"
+      StrCpy $architecture "i586"
+    ${EndIf}
+
+    StrCpy $0 $distribution 14
+    ${If} $distribution == "openSUSE Tumbleweed"
+      ; openSUSE Tumbleweed
+      StrCpy $R1 "http://download.opensuse.org/tumbleweed/iso/openSUSE-Tumbleweed-NET-$architecture-Current.iso"
+      StrCpy $R2 "openSUSE-Tumbleweed-NET-$architecture-Current.iso"
+      StrCpy $R3 "openSUSE Tumbleweed $architecture"
+    ${ElseIf} $0 == "openSUSE Leap "
+      ; openSUSE Leap
+      StrCpy $R3 $distribution 255 14
+      StrCpy $R1 "http://download.opensuse.org/distribution/leap/$R3/iso/openSUSE-Leap-$R3-NET-$architecture.iso"
+      StrCpy $R2 "openSUSE-Leap-$R3-NET-$architecture.iso"
+      StrCpy $R3 "openSUSE Leap $R3 $architecture"
+    ${Else}
+      ; openSUSE (before Leap)
+      StrCpy $R3 $distribution 255 9
+      StrCpy $R1 "http://download.opensuse.org/distribution/$R3/iso/openSUSE-$R3-NET-$architecture.iso"
+      StrCpy $R2 "openSUSE-$R3-NET-$architecture.iso"
+      StrCpy $R3 "openSUSE $R3 $architecture"
+    ${EndIf}
+
+    NSISdl::download $R1 "$dirVM\$R2"
+    Pop $0
+    ${If} $0 == "cancel"
+      Abort
+    ${ElseIf} $0 != "success"
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_DOWNLOADERROR_R1)
+      Abort
+    ${EndIf}
+
+    ; create a virtual machine and start it..
+    ${If} $architecture == "i386"
+      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" createvm --name $\"$R3$\" --register --ostype $\"OpenSUSE$\""
+      nsExec::Exec $R4
+    ${Else}
+      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" createvm --name $\"$R3$\" --register --ostype $\"OpenSUSE_64$\""
+      nsExec::Exec $R4
+    ${EndIf}
+    Pop $R5
+    StrCmp $R5 "0" 0 lbl_vboxerrorsnodelete
+    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" modifyvm $\"$R3$\" --memory 1024 --vram 32 --mouse usbtablet"
+    nsExec::Exec $R4
+    Pop $R5
+    StrCmp $R5 "0" 0 lbl_vboxerrors
+    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storagectl $\"$R3$\" --name $\"SATA$\" --add sata --bootable on"
+    nsExec::Exec $R4
+    Pop $R5
+    StrCmp $R5 "0" 0 lbl_vboxerrors
+    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" createmedium disk --filename $\"$dirVM\$R3.vdi$\" --size 8192 --variant Standard"
+    nsExec::Exec $R4
+    Pop $R5
+    StrCmp $R5 "0" 0 lbl_vboxerrors
+    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storageattach $\"$R3$\" --storagectl $\"SATA$\" --port 0 --type hdd --medium $\"$dirVM\$R3.vdi$\""
+    nsExec::Exec $R4
+    Pop $R5
+    StrCmp $R5 "0" 0 lbl_vboxerrors
+    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storagectl $\"$R3$\" --name $\"IDE$\" --add ide --bootable on"
+    nsExec::Exec $R4
+    Pop $R5
+    StrCmp $R5 "0" 0 lbl_vboxerrors
+    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storageattach $\"$R3$\" --storagectl $\"IDE$\" --port 0 --device 0 --type dvddrive --medium $\"$dirVM\$R2$\""
+    nsExec::Exec $R4
+    Pop $R5
+    StrCmp $R5 "0" 0 lbl_vboxerrors
+    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" startvm $\"$R3$\" --type gui"
+    nsExec::Exec $R4
+    Pop $R5
+    StrCmp $R5 "0" 0 lbl_vboxerrors
+
+    ; show informational message
+    MessageBox MB_OK|MB_ICONINFORMATION $(STRING_STARTEDVM)
+
+    ; no more action is needed for virtualized environment
+    Return
+
+lbl_vboxerrors:
+    ; delete created VM
+    StrCpy $R6 "$\"$dirVirt\VBoxManage$\" unregistervm $\"$R3$\" --delete"
+    nsExec::Exec $R6
+    Pop $R6 ; ignore errors
+
+lbl_vboxerrorsnodelete:
+    ; show error message
+    MessageBox MB_OK|MB_ICONSTOP $(STRING_CREATEVMERROR)
+    Abort
+  ${EndIf}
 
   SetOutPath $INSTDIR
 
