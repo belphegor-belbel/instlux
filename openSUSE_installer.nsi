@@ -314,6 +314,12 @@ Function "LeaveDistributionSelection"
     StrCpy $0 $distribution $1
 
     ${If} $0 == $(STRING_VERSIONOFTHISMEDIA)
+      ; cannot use local media if virtualized install
+      ${If} $environment != $(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_CANNOTUSELOCALMEDIAIFVIRTUALIZED)
+        Abort
+      ${EndIf}
+
       ${If} $architecture == "i386"
       ${AndIf} $mediaI386 == "0"
         MessageBox MB_OK|MB_ICONSTOP $(STRING_NOTEXISTONMEDIA)
@@ -348,20 +354,26 @@ lbl_winnt:
     StrCpy $R0 2048
     ${If} $4 L< $R0
       MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION $(STRING_INSUFFICIENT_MEMORY) \
-        IDOK lbl_lowmemoryok
-      Quit
-lbl_lowmemoryok:
+        IDOK lbl_lowmemoryokvbox
+      Abort
+lbl_lowmemoryokvbox:
       ExecShell "open" "$(STRING_URL_INSUFFICIENT_MEMORY)"
     ${EndIf}
+
+    ; check GUI (VirtualBox cannot support Server Core)
+    IfFileExists "$WINDIR\explorer.exe" lbl_notservercore
+    MessageBox MB_OK|MB_ICONSTOP $(STRING_SERVERCOREVIRTUALBOX)
+    Abort
+lbl_notservercore:
 
     ; check free storage (8GB or more needed)
     ; ###TODO###
 
     ; check powershell (required for later procedure)
-    IfFileExists "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe" lbl_powershell
+    IfFileExists "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe" lbl_powershellvbox
     MessageBox MB_OK|MB_ICONSTOP $(STRING_NOPOWERSHELLVIRTUALBOX)
     Abort
-lbl_powershell:
+lbl_powershellvbox:
 
     ; read registry whether VirtualBox is installed or not
     ReadRegStr $0 HKCR "progId_VirtualBox.Shell.vbox\shell\open\command" ""
