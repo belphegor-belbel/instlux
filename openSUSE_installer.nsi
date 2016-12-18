@@ -230,7 +230,7 @@ Function "ShowDistributionSelection"
   WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
     "Field 5" "Text" $(STRING_ENVIRONMENT)
   WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 6" "ListItems" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)|$(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)"
+    "Field 6" "ListItems" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)|$(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)|$(STRING_ENVIRONMENTSELECTITEM_HYPERV)"
   WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
     "Field 6" "State" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)"
   WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
@@ -516,6 +516,58 @@ lbl_loopvboxpropcrlf:
     Delete "$TEMP\vbox_system_prop.txt"
 
     CreateDirectory $dirVM
+  ${ElseIf} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
+    ; check memory (2GB or more needed)
+    Call GetSystemMemoryInfo
+    StrCpy $R0 2048
+    ${If} $4 L< $R0
+      MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION $(STRING_INSUFFICIENT_MEMORY) \
+        IDOK lbl_lowmemoryokhyperv
+      Abort
+lbl_lowmemoryokhyperv:
+      ExecShell "open" "$(STRING_URL_INSUFFICIENT_MEMORY)"
+    ${EndIf}
+
+    ; check free storage (8GB or more needed)
+    ; ###TODO###
+
+    ; check powershell (required for later procedure)
+    IfFileExists "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe" lbl_powershellhyperv
+    MessageBox MB_OK|MB_ICONSTOP $(STRING_NOPOWERSHELLHYPERV)
+    Abort
+lbl_powershellhyperv:
+
+    ; check whether Hyper-V is installed or not
+    nsExec::ExecToStack "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe $\"(Get-WindowsFeature 'Hyper-V').Installed$\""
+    Pop $0
+    Pop $0
+    ${If} $0 == "False"
+      MessageBox MB_OKCANCEL|MB_ICONQUESTION \
+        $(STRING_HYPERVINSTALLATIONCONFIRM) \
+          IDOK lbl_installhyperv
+          Abort
+
+lbl_installhyperv:
+      nsExec::ExecToStack "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe $\"(Add-WindowsFeature Hyper-V).Success$\""
+      Pop $0
+      Pop $0
+      ${If} $0 != "True"
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERVINSTALLFAILED)
+        Abort
+      ${EndIf}
+    ${ElseIf} $0 != "True"
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERVCHECKFAILED)
+      Abort
+    ${EndIf}
+
+    nsExec::ExecToStack "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe $\"(Add-WindowsFeature Hyper-V).RestartNeeded$\""
+    Pop $0
+    Pop $0
+    ${If} $0 == "True"
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERVREBOOTREQUIRED)
+      ; installer should quit because reboot is needed
+      Quit
+    ${EndIf}
   ${Else}
     ; check bootloader when install to real (i.e. not virtual) machine
     Call CheckBootloader
