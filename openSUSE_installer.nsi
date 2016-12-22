@@ -4,6 +4,7 @@
 !include "MUI.nsh"
 !include "x64.nsh"
 !include "LogicLib.nsh"
+!include "WinVer.nsh"
 
 ; -----------------------------------------------------------------------------
 ; variables
@@ -19,6 +20,10 @@ Var mediaI386
 Var mediaX86_64
 Var dirVirt
 Var dirVM
+Var nameVM
+Var memoryVM
+Var diskVM
+Var switchVM
 
 ; -----------------------------------------------------------------------------
 ; General settings
@@ -44,6 +49,7 @@ SetCompressor /SOLID lzma
 
 !insertmacro MUI_PAGE_WELCOME
 Page custom "ShowDistributionSelection" "LeaveDistributionSelection"
+Page custom "ShowVirtualMachineSettings" "LeaveVirtualMachineSettings"
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
@@ -114,7 +120,57 @@ Function "GetSystemMemoryInfo"
     System::Free $1
     IntOp $4 $4 >> 20 ; (to [MB])
   ${EndIf}
-FunctionEnd
+FunctionEnd ; "GetSystemMemoryInfo"
+
+; -----------------------------------------------------------------------------
+; run PowerShell script
+!macro RunPowerShellCmdOptions Show CommandLine
+  !define execID ${__LINE__}
+  InitPluginsDir
+
+  Push $R1
+  FileOpen $R1 "$PLUGINSDIR\runpowershell.ps1" w
+  FileWrite $R1 "${CommandLine}"
+  FileClose $R1
+  Pop $R1
+
+  Push $R0
+  ${If} ${Show} == 0
+    Banner::show /set 76 $(STRING_BANNER_WAITINGTITLE) $(STRING_BANNER_WAITING_TEXT)
+
+    ; if running in X64, powershell(X64) is in $WINDIR\Sysnative.
+    ${If} ${RunningX64}
+      nsExec::ExecToStack "$\"$WINDIR\Sysnative\WindowsPowerShell\v1.0\PowerShell.exe$\" -InputFormat none -ExecutionPolicy RemoteSigned -File $\"$PLUGINSDIR\runpowershell.ps1$\""
+    ${Else}
+      nsExec::ExecToStack "$\"$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe$\" -InputFormat none -ExecutionPolicy RemoteSigned -File $\"$PLUGINSDIR\runpowershell.ps1$\""
+    ${EndIf}
+
+    Banner::destroy
+
+    Pop $R0 ; return value
+  ${Else}
+    Banner::show /set 76 $(STRING_BANNER_WAITINGTITLE) $(STRING_BANNER_WAITING_TEXT)
+
+    ; if running in X64, powershell(X64) is in $WINDIR\Sysnative.
+    ${If} ${RunningX64}
+      ExecWait "$\"$WINDIR\Sysnative\WindowsPowerShell\v1.0\PowerShell.exe$\" -InputFormat none -ExecutionPolicy RemoteSigned -File $\"$PLUGINSDIR\runpowershell.ps1$\"" $R0
+    ${Else}
+      ExecWait "$\"$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe$\" -InputFormat none -ExecutionPolicy RemoteSigned -File $\"$PLUGINSDIR\runpowershell.ps1$\"" $R0
+    ${EndIf}
+
+    Banner::destroy
+  ${EndIf}
+  IntCmp $R0 0 lbl_success_${execID}
+  SetErrorLevel 2
+
+lbl_success_${execID}:
+  Delete "$PLUGINSDIR\runpowershell.ps1"
+
+  !undef execID
+!macroend
+
+!define RunPowerShellCmd `!insertmacro RunPowerShellCmdOptions "0"`
+!define RunPowerShellCmdShow `!insertmacro RunPowerShellCmdOptions "1"`
 
 ; -----------------------------------------------------------------------------
 ; initialize function
@@ -122,6 +178,7 @@ FunctionEnd
 Function .onInit
   InitPluginsDir
   File /oname=$PLUGINSDIR\DistributionSelection.ini "DistributionSelection.ini"
+  File /oname=$PLUGINSDIR\VirtualMachineSettings.ini "VirtualMachineSettings.ini"
 
   Call GetSystemMemoryInfo
   StrCpy $R0 768
@@ -156,6 +213,7 @@ lbl_lowmemoryok:
   ${EndIf}
 
   ; check media
+  ClearErrors
   FileOpen $R0 "$EXEDIR\media.1\products" r
   IfErrors lbl_noproduct 0
 
@@ -177,6 +235,7 @@ lbl_loopexit:
   StrCpy $mediaVer $R2 $R3
 
   ; check if i386 exists
+  ClearErrors
   FileOpen $R0 "$EXEDIR\boot\i386\loader\linux" r
   IfErrors lbl_noi386 0
 
@@ -188,6 +247,7 @@ lbl_noi386:
 lbl_i386exit:
 
   ; check if x86_64 exists
+  ClearErrors
   FileOpen $R0 "$EXEDIR\boot\x86_64\loader\linux" r
   IfErrors lbl_nox86_64 0
 
@@ -210,7 +270,7 @@ lbl_productdone:
 
   !undef MUI_LANGDLL_WINDOWTITLE
   !undef MUI_LANGDLL_INFO
-FunctionEnd
+FunctionEnd ; ".onInit"
 
 ; -----------------------------------------------------------------------------
 ; display distribution
@@ -231,8 +291,6 @@ Function "ShowDistributionSelection"
     "Field 5" "Text" $(STRING_ENVIRONMENT)
   WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
     "Field 6" "ListItems" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)|$(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)|$(STRING_ENVIRONMENTSELECTITEM_HYPERV)"
-  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 6" "State" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)"
   WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
     "Field 7" "State" $(STRING_DISTSELECTIONDESCRIPTION)
 
@@ -282,6 +340,22 @@ Function "ShowDistributionSelection"
       "Field 4" "State" "i386"
     WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
       "Field 4" "ListItems" "i386"
+  ${EndIf}
+
+  ${If} $distribution != ""
+    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
+    "Field 2" "State" $distribution
+  ${EndIf}
+  ${If} $architecture != ""
+    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
+    "Field 4" "State" $architecture
+  ${EndIf}
+  ${If} $environment != ""
+    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
+      "Field 6" "State" $environment
+  ${Else}
+    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
+      "Field 6" "State" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)"
   ${EndIf}
 
   ; show dialog
@@ -336,18 +410,17 @@ Function "LeaveDistributionSelection"
 
   ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)
     ; check operating system (Windows XP or later required)
-    ReadRegStr $R0 HKLM \
-      "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-    IfErrors 0 lbl_winnt
-    MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOX_OSFAILED)
-    Abort
-
-lbl_winnt:
-    StrCpy $R1 $R0 1
-    ${If} $R1 S< '5'
+    ClearErrors
+    ${IfNot} ${IsNT}
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOX_OSFAILED)
+    ${EndIf}
+    ${IfNot} ${AtLeastWinXP}
       MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOX_OSFAILED)
       Abort
     ${EndIf}
+
+    ; check Internet connectivity
+    ; ###TODO###
 
     ; check memory (2GB or more needed)
     Call GetSystemMemoryInfo
@@ -386,12 +459,12 @@ lbl_powershellvbox:
 lbl_installvbox:
       ; check the latest version
       ; (NSISdl cannot be used because it does not support HTTPS...)
-      ; (nsExec::Exec cannot be used for powershell)
-      StrCpy $R1 "https://update.virtualbox.org/query.php?platform=WINDOWS_32BITS_GENERIC&version=1.0.0"
-      ExecWait "$\"$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe$\" (new-object System.Net.WebClient).Downloadfile(\$\"$R1\$\", \$\"$TEMP\vbox-latest.txt\$\")"
+      StrCpy $R2 "https://update.virtualbox.org/query.php?platform=WINDOWS_32BITS_GENERIC&version=1.0.0"
+      ${RunPowerShellCmd} "(new-object System.Net.WebClient).Downloadfile($\"$R2$\", $\"$TEMP\vbox-latest.txt$\")"
       Pop $0
       ${IfNot} $0 == ""
-        MessageBox MB_OK|MB_ICONSTOP $(STRING_DOWNLOADERROR_R1)
+        StrCpy $R1 $R2
+        MessageBox MB_OK|MB_ICONSTOP "ver $(STRING_DOWNLOADERROR_R1)"
         Abort
       ${EndIf}
 
@@ -411,15 +484,10 @@ lbl_loopinstallvboxnotspace:
       StrCmp $2 " " lbl_loopinstallvboxnotspace
 
       IntOp $1 $1 - 1
-      StrCpy $R1 $R2 1024 $1
+      StrCpy $R3 $R2 1024 $1
       Delete "$TEMP\vbox-latest.txt"
 
-      ExecWait "$\"$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe$\" Start-BitsTransfer -Source \$\"$R1\$\" -Destination \$\"$TEMP\vbox.exe\$\""
-      Pop $0
-      ${IfNot} $0 == ""
-        MessageBox MB_OK|MB_ICONSTOP $(STRING_DOWNLOADERROR_R1)
-        Abort
-      ${EndIf}
+      ${RunPowerShellCmdShow} 'Start-BitsTransfer -Source $\"$R3$\" -Destination $\"$TEMP\vbox.exe$\"'
 
       ExecWait "$\"$TEMP\vbox.exe$\"" $0
       ${IfNot} $0 == "0"
@@ -477,6 +545,7 @@ lbl_loopremoveexit:
     StrCpy $dirVirt $dirVirt $R3
 
     ; set $dirVM
+    Banner::show /set 76 $(STRING_BANNER_WAITINGTITLE) $(STRING_BANNER_WAITING_TEXT)
     nsExec::Exec "cmd /C $\"$dirVirt\VBoxManage.exe$\" list systemproperties > $TEMP\vbox_system_prop.txt"
     FileOpen $R1 "$TEMP\vbox_system_prop.txt" r
     Pop $0
@@ -487,6 +556,7 @@ lbl_loopreadvboxprop:
     StrCmp $R3 "Default machine folder:" lbl_loopreadvboxpropexit
     Goto lbl_loopreadvboxprop
 lbl_loopreadvboxpropexit:
+    Banner::destroy
 
     ${If} $R3 == "Default machine folder:"
       StrCpy $R4 23
@@ -517,6 +587,19 @@ lbl_loopvboxpropcrlf:
 
     CreateDirectory $dirVM
   ${ElseIf} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
+    ; check operating system (Windows 8/Server 2012 or later required)
+    ClearErrors
+    ${IfNot} ${IsNT}
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_OSFAILED)
+    ${EndIf}
+    ${IfNot} ${AtLeastWin8}
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_OSFAILED)
+      Abort
+    ${EndIf}
+
+    ; check Internet connectivity
+    ; ###TODO###
+
     ; check memory (2GB or more needed)
     Call GetSystemMemoryInfo
     StrCpy $R0 2048
@@ -537,37 +620,97 @@ lbl_lowmemoryokhyperv:
     Abort
 lbl_powershellhyperv:
 
-    ; check whether Hyper-V is installed or not
-    nsExec::ExecToStack "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe $\"(Get-WindowsFeature 'Hyper-V').Installed$\""
+    ${If} ${IsServerOS}
+      ; check whether Hyper-V (for server OS) is installed or not
+      ${RunPowerShellCmd} "Import-Module ServerManager; (Get-WindowsFeature Hyper-V).Installed"
+    ${Else}
+      ; check whether Hyper-V (for client OS) is installed or not
+      ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All).State"
+    ${EndIf}
     Pop $0
-    Pop $0
-    ${If} $0 == "False"
+    ${If} $0 == "False$\r$\n"
+    ${OrIf} $0 == "Disabled$\r$\n"
       MessageBox MB_OKCANCEL|MB_ICONQUESTION \
         $(STRING_HYPERVINSTALLATIONCONFIRM) \
           IDOK lbl_installhyperv
           Abort
 
 lbl_installhyperv:
-      nsExec::ExecToStack "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe $\"(Add-WindowsFeature Hyper-V).Success$\""
+      ${If} ${IsServerOS}
+        ${RunPowerShellCmd} "Import-Module ServerManager; (Add-WindowsFeature Hyper-V).Success"
+      ${Else}
+        ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -NoRestart).Online"
+      ${EndIf}
       Pop $0
-      Pop $0
-      ${If} $0 != "True"
-        MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERVINSTALLFAILED)
+      StrLen $1 $0
+      IntOp $1 $1 - 6
+      StrCpy $2 $0 6 $1
+      ${If} $2 != "True$\r$\n"
+        MessageBox MB_OK|MB_ICONSTOP "$(STRING_HYPERVINSTALLFAILED)"
         Abort
       ${EndIf}
-    ${ElseIf} $0 != "True"
-      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERVCHECKFAILED)
+    ${ElseIf} $0 != "True$\r$\n"
+    ${AndIf} $0 != "Enabled$\r$\n"
+      MessageBox MB_OK|MB_ICONSTOP "1: $(STRING_HYPERVCHECKFAILED)"
       Abort
     ${EndIf}
 
-    nsExec::ExecToStack "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe $\"(Add-WindowsFeature Hyper-V).RestartNeeded$\""
+    ${If} ${IsServerOS}
+      ${RunPowerShellCmd} "Import-Module ServerManager; (Add-WindowsFeature Hyper-V).RestartNeeded"
+    ${Else}
+      ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -NoRestart).RestartNeeded 3> $$null"
+    ${EndIf}
     Pop $0
-    Pop $0
-    ${If} $0 == "True"
-      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERVREBOOTREQUIRED)
+    ${If} $0 == "Yes$\r$\n"
+    ${OrIf} $0 == "True$\r$\n"
+      MessageBox MB_OK|MB_ICONINFORMATION $(STRING_HYPERVREBOOTREQUIRED)
       ; installer should quit because reboot is needed
       Quit
+    ${ElseIf} $0 != "No$\r$\n"
+    ${AndIf} $0 != "False$\r$\n"
+      MessageBox MB_OK|MB_ICONSTOP "2: $(STRING_HYPERVCHECKFAILED)"
+      Abort
     ${EndIf}
+
+    ${If} ${IsServerOS}
+      ${RunPowerShellCmd} "Import-Module ServerManager; (Get-WindowsFeature RSAT-Hyper-V-Tools).Installed"
+
+      Pop $0
+      ${If} $0 == "False$\r$\n"
+      ${OrIf} $0 == "Disabled$\r$\n"
+        MessageBox MB_OKCANCEL|MB_ICONQUESTION $(STRING_HYPERVTOOLSINSTALLATIONCONFIRM) \
+          IDOK lbl_installhypervtools
+          Abort
+
+lbl_installhypervtools:
+        ${RunPowerShellCmd} "Import-Module ServerManager; (Add-WindowsFeature RSAT-Hyper-V-Tools).Success"
+        Pop $0
+        StrLen $1 $0
+        IntOp $1 $1 - 6
+        StrCpy $2 $0 6 $1
+        ${If} $2 != "True$\r$\n"
+          MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERVTOOLSINSTALLFAILED)
+          Abort
+        ${EndIf}
+      ${ElseIf} $0 != "True$\r$\n"
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERVTOOLSCHECKFAILED)
+        Abort
+      ${EndIf}
+
+    ${EndIf}
+
+    ${RunPowerShellCmd} "(Get-VMHost).VirtualHardDiskPath"
+    Pop $dirVM
+
+    StrLen $R4 $dirVM
+lbl_loophypervpropcrlf:
+    IntOp $R4 $R4 - 1
+    StrCpy $R5 $dirVM 1 $R4
+    StrCmp $R5 "$\r" lbl_loophypervpropcrlf
+    StrCmp $R5 "$\n" lbl_loophypervpropcrlf
+
+    IntOp $R4 $R4 + 1
+    StrCpy $dirVM $dirVM $R4 0
   ${Else}
     ; check bootloader when install to real (i.e. not virtual) machine
     Call CheckBootloader
@@ -585,14 +728,121 @@ lbl_installhyperv:
         Abort
       ${EndIf}
     ${EndIf}
+
+    MessageBox MB_OKCANCEL|MB_ICONQUESTION|MB_DEFBUTTON2 $(STRING_STARTCONFIRM) \
+      IDOK leavedist_ok
+    Abort
+leavedist_ok:
   ${EndIf}
+
+FunctionEnd ; "LeaveDistributionSelection"
+
+; -----------------------------------------------------------------------------
+; display virtual machine settings
+
+Section "Display virtual machine settings"
+  SectionIn RO                  ; always show
+SectionEnd
+
+Function "UpdateVirtualSwitches"
+  ${RunPowerShellCmd} "(Get-VmSwitch).Name -join $\"|$\""
+  Pop $0
+  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 8" "ListItems" "$0"
+  ${RunPowerShellCmd} "(Get-VmSwitch).Name | Select-Object -First 1"
+  Pop $0
+  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 8" "State" "$0"
+FunctionEnd ; "UpdateVirtualSwitches"
+
+Function "ShowVirtualMachineSettings"
+  ; If not virtual machine, skip it
+  ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)
+    Abort
+  ${EndIf}
+
+  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 1" "Text" $(STRING_VMNAME)
+  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 3" "Text" $(STRING_VMMEMORY)
+  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 5" "Text" $(STRING_VMDISK)
+  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 7" "Text" $(STRING_VMNETWORK)
+
+  ${If} $nameVM != ""
+    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+      "Field 2" "State" "$nameVM"
+  ${Else}
+    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+      "Field 2" "State" "$distribution $architecture"
+  ${EndIf}
+
+  ${If} $memoryVM != ""
+    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+      "Field 4" "State" "$memoryVM"
+  ${Else}
+    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+      "Field 4" "State" "1024"
+  ${EndIf}
+
+  ${If} $diskVM != ""
+    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+      "Field 6" "State" "$diskVM"
+  ${Else}
+    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+      "Field 6" "State" "8192"
+  ${EndIf}
+
+  ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
+    ${If} $switchVM != ""
+      WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+        "Field 8" "State" "$switchVM"
+    ${Else}
+      Call UpdateVirtualSwitches
+    ${EndIf}
+  ${Else}
+    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+        "Field 7" "Flags" "DISABLED"
+    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+        "Field 8" "Flags" "DISABLED"
+    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
+        "Field 9" "Flags" "DISABLED"
+  ${EndIf}
+
+  ; show dialog
+  InstallOptions::initDialog /NOUNLOAD "$PLUGINSDIR\VirtualMachineSettings.ini"
+  Pop $hwnd
+
+  !insertmacro MUI_HEADER_TEXT $(STRING_VMSETTINGS_TITLE) $(STRING_VMSETTINGS_TEXT)
+
+  InstallOptions::show
+FunctionEnd ; "ShowVirtualMachineSettings"
+
+Function "LeaveVirtualMachineSettings"
+  ; Whether "Refresh" is clicked or not
+  ReadIniStr $0 "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Settings" "State"
+  ${If} $0 == "9" ; "Refresh" button
+    Call UpdateVirtualSwitches
+    Abort
+  ${EndIf}
+
+  ReadIniStr $nameVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 2" "State"
+  ReadIniStr $memoryVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 4" "State"
+  ReadInIStr $diskVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 6" "State"
+  ReadIniStr $switchVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
+    "Field 8" "State"
 
   MessageBox MB_OKCANCEL|MB_ICONQUESTION|MB_DEFBUTTON2 $(STRING_STARTCONFIRM) \
     IDOK leavedist_ok
   Abort
 leavedist_ok:
 
-FunctionEnd ; "LeaveDistributionSelection"
+FunctionEnd ; "LeaveVirtualMachineSettings"
 
 ; -----------------------------------------------------------------------------
 ; check bootloader
@@ -604,9 +854,9 @@ Function ${un}CheckBootloader
   ClearErrors
 
   ; check if Windows NT family
+  ClearErrors
   ReadRegStr $R0 HKLM \
   "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-
   IfErrors 0 lbl_winnt
 
   ; Windows Me or earlier
@@ -643,6 +893,7 @@ Section "Install"
   SectionIn RO
 
   ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)
+  ${OrIf} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
     ; download NET iso
     ${If} $architecture == "i386"
       StrCpy $architecture "i586"
@@ -653,19 +904,16 @@ Section "Install"
       ; openSUSE Tumbleweed
       StrCpy $R1 "http://download.opensuse.org/tumbleweed/iso/openSUSE-Tumbleweed-NET-$architecture-Current.iso"
       StrCpy $R2 "openSUSE-Tumbleweed-NET-$architecture-Current.iso"
-      StrCpy $R3 "openSUSE Tumbleweed $architecture"
     ${ElseIf} $0 == "openSUSE Leap "
       ; openSUSE Leap
       StrCpy $R3 $distribution 255 14
       StrCpy $R1 "http://download.opensuse.org/distribution/leap/$R3/iso/openSUSE-Leap-$R3-NET-$architecture.iso"
       StrCpy $R2 "openSUSE-Leap-$R3-NET-$architecture.iso"
-      StrCpy $R3 "openSUSE Leap $R3 $architecture"
     ${Else}
       ; openSUSE (before Leap)
       StrCpy $R3 $distribution 255 9
       StrCpy $R1 "http://download.opensuse.org/distribution/$R3/iso/openSUSE-$R3-NET-$architecture.iso"
       StrCpy $R2 "openSUSE-$R3-NET-$architecture.iso"
-      StrCpy $R3 "openSUSE $R3 $architecture"
     ${EndIf}
 
     NSISdl::download $R1 "$dirVM\$R2"
@@ -673,65 +921,117 @@ Section "Install"
     ${If} $0 == "cancel"
       Abort
     ${ElseIf} $0 != "success"
-      MessageBox MB_OK|MB_ICONSTOP $(STRING_DOWNLOADERROR_R1)
+      MessageBox MB_OK|MB_ICONSTOP "iso $(STRING_DOWNLOADERROR_R1)"
       Abort
     ${EndIf}
 
-    ; create a virtual machine and start it..
-    ${If} $architecture == "i386"
-      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" createvm --name $\"$R3$\" --register --ostype $\"OpenSUSE$\""
+    ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)
+      ; create a virtual machine and start it..
+      ${If} $architecture == "i386"
+        StrCpy $R4 "$\"$dirVirt\VBoxManage$\" createvm --name $\"$nameVM$\" --register --ostype $\"OpenSUSE$\""
+        nsExec::Exec $R4
+      ${Else}
+        StrCpy $R4 "$\"$dirVirt\VBoxManage$\" createvm --name $\"$nameVM$\" --register --ostype $\"OpenSUSE_64$\""
+        nsExec::Exec $R4
+      ${EndIf}
+      Pop $R5
+      StrCmp $R5 "0" 0 lbl_vboxerrorsnodelete
+      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" modifyvm $\"$nameVM$\" --memory $memoryVM --vram 32 --mouse usbtablet"
       nsExec::Exec $R4
-    ${Else}
-      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" createvm --name $\"$R3$\" --register --ostype $\"OpenSUSE_64$\""
+      Pop $R5
+      StrCmp $R5 "0" 0 lbl_vboxerrors
+      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storagectl $\"$nameVM$\" --name $\"SATA$\" --add sata --bootable on"
       nsExec::Exec $R4
-    ${EndIf}
-    Pop $R5
-    StrCmp $R5 "0" 0 lbl_vboxerrorsnodelete
-    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" modifyvm $\"$R3$\" --memory 1024 --vram 32 --mouse usbtablet"
-    nsExec::Exec $R4
-    Pop $R5
-    StrCmp $R5 "0" 0 lbl_vboxerrors
-    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storagectl $\"$R3$\" --name $\"SATA$\" --add sata --bootable on"
-    nsExec::Exec $R4
-    Pop $R5
-    StrCmp $R5 "0" 0 lbl_vboxerrors
-    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" createmedium disk --filename $\"$dirVM\$R3.vdi$\" --size 8192 --variant Standard"
-    nsExec::Exec $R4
-    Pop $R5
-    StrCmp $R5 "0" 0 lbl_vboxerrors
-    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storageattach $\"$R3$\" --storagectl $\"SATA$\" --port 0 --type hdd --medium $\"$dirVM\$R3.vdi$\""
-    nsExec::Exec $R4
-    Pop $R5
-    StrCmp $R5 "0" 0 lbl_vboxerrors
-    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storagectl $\"$R3$\" --name $\"IDE$\" --add ide --bootable on"
-    nsExec::Exec $R4
-    Pop $R5
-    StrCmp $R5 "0" 0 lbl_vboxerrors
-    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storageattach $\"$R3$\" --storagectl $\"IDE$\" --port 0 --device 0 --type dvddrive --medium $\"$dirVM\$R2$\""
-    nsExec::Exec $R4
-    Pop $R5
-    StrCmp $R5 "0" 0 lbl_vboxerrors
-    StrCpy $R4 "$\"$dirVirt\VBoxManage$\" startvm $\"$R3$\" --type gui"
-    nsExec::Exec $R4
-    Pop $R5
-    StrCmp $R5 "0" 0 lbl_vboxerrors
+      Pop $R5
+      StrCmp $R5 "0" 0 lbl_vboxerrors
+      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" createmedium disk --filename $\"$dirVM\$nameVM.vdi$\" --size $diskVM --variant Standard"
+      nsExec::Exec $R4
+      Pop $R5
+      StrCmp $R5 "0" 0 lbl_vboxerrors
+      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storageattach $\"$nameVM$\" --storagectl $\"SATA$\" --port 0 --type hdd --medium $\"$dirVM\$nameVM.vdi$\""
+      nsExec::Exec $R4
+      Pop $R5
+      StrCmp $R5 "0" 0 lbl_vboxerrors
+      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storagectl $\"$nameVM$\" --name $\"IDE$\" --add ide --bootable on"
+      nsExec::Exec $R4
+      Pop $R5
+      StrCmp $R5 "0" 0 lbl_vboxerrors
+      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" storageattach $\"$nameVM$\" --storagectl $\"IDE$\" --port 0 --device 0 --type dvddrive --medium $\"$dirVM\$R2$\""
+      nsExec::Exec $R4
+      Pop $R5
+      StrCmp $R5 "0" 0 lbl_vboxerrors
+      StrCpy $R4 "$\"$dirVirt\VBoxManage$\" startvm $\"$nameVM$\" --type gui"
+      nsExec::Exec $R4
+      Pop $R5
+      StrCmp $R5 "0" 0 lbl_vboxerrors
 
-    ; show informational message
-    MessageBox MB_OK|MB_ICONINFORMATION $(STRING_STARTEDVM)
+      ; show informational message
+      MessageBox MB_OK|MB_ICONINFORMATION $(STRING_STARTEDVM)
 
-    ; no more action is needed for virtualized environment
-    Return
+      ; no more action is needed for virtualized environment
+      Return
 
 lbl_vboxerrors:
-    ; delete created VM
-    StrCpy $R6 "$\"$dirVirt\VBoxManage$\" unregistervm $\"$R3$\" --delete"
-    nsExec::Exec $R6
-    Pop $R6 ; ignore errors
+      ; delete created VM
+      StrCpy $R6 "$\"$dirVirt\VBoxManage$\" unregistervm $\"$nameVM$\" --delete"
+      nsExec::Exec $R6
+      Pop $R6 ; ignore errors
 
 lbl_vboxerrorsnodelete:
-    ; show error message
-    MessageBox MB_OK|MB_ICONSTOP $(STRING_CREATEVMERROR)
-    Abort
+      ; show error message
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_CREATEVMERROR)
+      Abort
+    ${ElseIf} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
+      ; memory=[MiB] to [B], disk=[MiB] to [B]
+      System::Int64Op $memoryVM << 20
+      Pop $memoryVM
+      System::Int64Op $diskVM << 20
+      Pop $diskVM
+
+      StrCpy $R4 "(New-VM -Name $\"$nameVM$\" -MemoryStartupBytes $memoryVM -NewVHDPath $\"$nameVM.vhdx$\" -NewVHDSizeBytes $diskVM -SwitchName $\"$switchVM$\").Name 2>&1"
+      ${RunPowerShellCmd} $R4
+      Pop $0
+      ${If} $0 != "$nameVM$\r$\n"
+        StrCpy $R5 $0
+        Goto lbl_hyperverrorsnodelete
+        Abort
+      ${EndIf}
+
+      StrCpy $R4 "Set-VMDvdDrive -VMname $\"$nameVM$\" -Path $\"$dirVM\$R2$\" 2>&1"
+      ${RunPowerShellCmd} $R4
+      Pop $0
+      ${If} $0 != ""
+        StrCpy $R5 $0
+        Goto lbl_hyperverrors
+      ${EndIf}
+
+      StrCpy $R4 "Start-VM -Name $\"$nameVM$\""
+      ${RunPowerShellCmd} $R4
+      Pop $0
+      ${If} $0 != ""
+        StrCpy $R5 $0
+        Goto lbl_hyperverrors
+      ${EndIf}
+
+      Exec "$\"$WINDIR\Sysnative\vmconnect.exe$\" $\"localhost$\" $\"$nameVM$\""
+
+      ; show informational message
+      MessageBox MB_OK|MB_ICONINFORMATION $(STRING_STARTEDVM)
+
+      ; no more action is needed for virtualized environment
+      Return
+
+lbl_hyperverrors:
+      ; delete created VM
+      ${RunPowerShellCmd} "Remove-VM -Name $\"$nameVM$\" -Force"
+      Pop $R6 ; ignore errors
+      Delete "$dirVM\$nameVM.vhdx"
+
+lbl_hyperverrorsnodelete:
+      ; show error message
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_CREATEVMERROR)
+      Abort
+    ${EndIf}
   ${EndIf}
 
   SetOutPath $INSTDIR
@@ -793,7 +1093,8 @@ lbl_vboxerrorsnodelete:
       Delete /REBOOTOK "$INSTDIR\initrd"
       RmDir /REBOOTOK /r "$INSTDIR"
 
-      MessageBox MB_OK|MB_ICONSTOP $(STRING_DOWNLOADERROR_R2)
+      StrCpy $R1 $R2
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_DOWNLOADERROR_R1)
       Abort
     ${EndIf}
   ${EndIf}
