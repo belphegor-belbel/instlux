@@ -832,14 +832,6 @@ Function "ShowVirtualMachineSettings"
 FunctionEnd ; "ShowVirtualMachineSettings"
 
 Function "LeaveVirtualMachineSettings"
-  ; Whether "Refresh" is clicked or not
-  ReadIniStr $0 "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Settings" "State"
-  ${If} $0 == "9" ; "Refresh" button
-    Call UpdateVirtualSwitches
-    Abort
-  ${EndIf}
-
   ReadIniStr $nameVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
     "Field 2" "State"
   ReadIniStr $memoryVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
