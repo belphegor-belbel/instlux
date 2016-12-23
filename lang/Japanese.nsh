@@ -49,3 +49,4 @@
 !insertmacro LANG_STRING STRING_VMMEMORY "メモリ [メガバイト] (&M):"
 !insertmacro LANG_STRING STRING_VMDISK "ディスクサイズ [メガバイト] (&D):"
 !insertmacro LANG_STRING STRING_VMNETWORK "接続するネットワーク (&C):"
+!insertmacro LANG_STRING STRING_HYPERV_NONETWORKSELECTED "接続するネットワークが選択されていません。ネットワークが表示されていない場合は、 Hyper-V マネージャなどを利用して仮想スイッチを作成し、更新ボタンを押してください。"

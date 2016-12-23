@@ -49,3 +49,4 @@
 !insertmacro LANG_STRING STRING_VMMEMORY "Memory [by mega-bytes] (&M):"
 !insertmacro LANG_STRING STRING_VMDISK "Disk size [by mega-bytes] (&D):"
 !insertmacro LANG_STRING STRING_VMNETWORK "Network to be connected (&C):"
+!insertmacro LANG_STRING STRING_HYPERV_NONETWORKSELECTED "Network is not selected. If there is no network, please use Hyper-V manager to create virtual switch and push Refresh button."

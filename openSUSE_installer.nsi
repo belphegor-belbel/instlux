@@ -849,6 +849,12 @@ Function "LeaveVirtualMachineSettings"
   ReadIniStr $switchVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
     "Field 8" "State"
 
+  ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
+  ${AndIf} $switchVM == ""
+    MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_NONETWORKSELECTED)
+    Abort
+  ${EndIf}
+
   MessageBox MB_OKCANCEL|MB_ICONQUESTION|MB_DEFBUTTON2 $(STRING_STARTCONFIRM) \
     IDOK leavedist_ok
   Abort
