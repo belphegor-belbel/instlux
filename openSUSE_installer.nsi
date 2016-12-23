@@ -656,23 +656,6 @@ lbl_installhyperv:
     ${EndIf}
 
     ${If} ${IsServerOS}
-      ${RunPowerShellCmd} "Import-Module ServerManager; (Add-WindowsFeature Hyper-V).RestartNeeded"
-    ${Else}
-      ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -NoRestart).RestartNeeded 3> $$null"
-    ${EndIf}
-    Pop $0
-    ${If} $0 == "Yes$\r$\n"
-    ${OrIf} $0 == "True$\r$\n"
-      MessageBox MB_OK|MB_ICONINFORMATION $(STRING_HYPERVREBOOTREQUIRED)
-      ; installer should quit because reboot is needed
-      Quit
-    ${ElseIf} $0 != "No$\r$\n"
-    ${AndIf} $0 != "False$\r$\n"
-      MessageBox MB_OK|MB_ICONSTOP "2: $(STRING_HYPERVCHECKFAILED)"
-      Abort
-    ${EndIf}
-
-    ${If} ${IsServerOS}
       ${RunPowerShellCmd} "Import-Module ServerManager; (Get-WindowsFeature RSAT-Hyper-V-Tools).Installed"
 
       Pop $0
@@ -709,6 +692,23 @@ lbl_installhypervtools:
         MessageBox MB_OK|MB_ICONSTOP "2: $(STRING_HYPERVCHECKFAILED)"
         Abort
       ${EndIf}
+    ${EndIf}
+
+    ${If} ${IsServerOS}
+      ${RunPowerShellCmd} "Import-Module ServerManager; (Add-WindowsFeature Hyper-V).RestartNeeded"
+    ${Else}
+      ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -NoRestart).RestartNeeded 3> $$null"
+    ${EndIf}
+    Pop $0
+    ${If} $0 == "Yes$\r$\n"
+    ${OrIf} $0 == "True$\r$\n"
+      MessageBox MB_OK|MB_ICONINFORMATION $(STRING_HYPERVREBOOTREQUIRED)
+      ; installer should quit because reboot is needed
+      Quit
+    ${ElseIf} $0 != "No$\r$\n"
+    ${AndIf} $0 != "False$\r$\n"
+      MessageBox MB_OK|MB_ICONSTOP "2: $(STRING_HYPERVCHECKFAILED)"
+      Abort
     ${EndIf}
 
     ${RunPowerShellCmd} "(Get-VMHost).VirtualHardDiskPath"
