@@ -42,6 +42,7 @@
 !insertmacro LANG_STRING STRING_HYPERVTOOLSINSTALLATIONCONFIRM "Hyper-V management tools are not installed. Install?"
 !insertmacro LANG_STRING STRING_HYPERVTOOLSINSTALLFAILED "Hyper-V management tools installation failed: $2"
 !insertmacro LANG_STRING STRING_HYPERVTOOLSCHECKFAILED "Hyper-V management tools check failed: $0"
+!insertmacro LANG_STRING STRING_HYPERVTOOLSREBOOTREQUIRED "Hyper-V management tools was installed successfully. Please reboot your system and run this setup again."
 !insertmacro LANG_STRING STRING_VMSETTINGS_TITLE "Virtual Machine Settings"
 !insertmacro LANG_STRING STRING_VMSETTINGS_TEXT "Please set settings for virtual machine."
 !insertmacro LANG_STRING STRING_VMNAME "Virtual machine name (&N):"

@@ -697,6 +697,18 @@ lbl_installhypervtools:
         Abort
       ${EndIf}
 
+      ${RunPowerShellCmd} "Import-Module ServerManager; (Add-WindowsFeature RSAT-Hyper-V-Tools).RestartNeeded"
+      Pop $0
+      ${If} $0 == "Yes$\r$\n"
+      ${OrIf} $0 == "True$\r$\n"
+        MessageBox MB_OK|MB_ICONINFORMATION $(STRING_HYPERVTOOLSREBOOTREQUIRED)
+        ; installer should quit because reboot is needed
+        Quit
+      ${ElseIf} $0 != "No$\r$\n"
+      ${AndIf} $0 != "False$\r$\n"
+        MessageBox MB_OK|MB_ICONSTOP "2: $(STRING_HYPERVCHECKFAILED)"
+        Abort
+      ${EndIf}
     ${EndIf}
 
     ${RunPowerShellCmd} "(Get-VMHost).VirtualHardDiskPath"

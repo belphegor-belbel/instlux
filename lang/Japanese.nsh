@@ -41,6 +41,7 @@
 !insertmacro LANG_STRING STRING_HYPERV_OSFAILED "本インストーラでは Windows 8 もしくは Windows Server 2012 以降の Hyper-V にのみ対応しています。それ以前のバージョンの Hyper-V には対応していません。"
 !insertmacro LANG_STRING STRING_HYPERVTOOLSINSTALLATIONCONFIRM "Hyper-V の管理ツールがインストールされていません。インストールしますか？"
 !insertmacro LANG_STRING STRING_HYPERVTOOLSINSTALLFAILED "Hyper-V の管理ツールのインストールに失敗しました: $2"
+!insertmacro LANG_STRING STRING_HYPERVTOOLSREBOOTREQUIRED "Hyper-V の管理ツールのインストールを行ないました。いったんシステムを再起動し、再度セットアップを実行してください。"
 !insertmacro LANG_STRING STRING_HYPERVTOOLSCHECKFAILED "Hyper-V の管理ツールのチェックに失敗しました: $0"
 !insertmacro LANG_STRING STRING_VMSETTINGS_TITLE "仮想マシンの設定"
 !insertmacro LANG_STRING STRING_VMSETTINGS_TEXT "仮想マシンの設定値を指定してください。"

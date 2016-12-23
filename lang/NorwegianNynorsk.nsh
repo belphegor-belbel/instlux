@@ -40,6 +40,7 @@
 !insertmacro LANG_STRING STRING_BANNER_WAITING_TEXT "Please wait..."
 !insertmacro LANG_STRING STRING_HYPERV_OSFAILED "This installer supports Hyper-V in Windows 8/Server 2012 or later only. Earlier versions are not supported."
 !insertmacro LANG_STRING STRING_HYPERVTOOLSINSTALLATIONCONFIRM "Hyper-V management tools are not installed. Install?"
+!insertmacro LANG_STRING STRING_HYPERVTOOLSREBOOTREQUIRED "Hyper-V management tools was installed successfully. Please reboot your system and run this setup again."
 !insertmacro LANG_STRING STRING_HYPERVTOOLSINSTALLFAILED "Hyper-V management tools installation failed: $2"
 !insertmacro LANG_STRING STRING_HYPERVTOOLSCHECKFAILED "Hyper-V management tools check failed: $0"
 !insertmacro LANG_STRING STRING_VMSETTINGS_TITLE "Virtual Machine Settings"
