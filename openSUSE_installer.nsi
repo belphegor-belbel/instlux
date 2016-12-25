@@ -711,6 +711,13 @@ lbl_installhypervtools:
       Abort
     ${EndIf}
 
+    ${RunPowerShellCmd} "(Get-VmSwitch -SwitchType External).Name -join $\"|$\""
+    Pop $0
+    ${If} $0 == "$\r$\n"
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_NOEXTERNALSWITCH)
+      Abort
+    ${EndIf}
+
     ${RunPowerShellCmd} "(Get-VMHost).VirtualHardDiskPath"
     Pop $dirVM
 
@@ -757,11 +764,11 @@ Section "Display virtual machine settings"
 SectionEnd
 
 Function "UpdateVirtualSwitches"
-  ${RunPowerShellCmd} "(Get-VmSwitch).Name -join $\"|$\""
+  ${RunPowerShellCmd} "(Get-VmSwitch -SwitchType External).Name -join $\"|$\""
   Pop $0
   WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
     "Field 8" "ListItems" "$0"
-  ${RunPowerShellCmd} "(Get-VmSwitch).Name | Select-Object -First 1"
+  ${RunPowerShellCmd} "(Get-VmSwitch -SwitchType External).Name | Select-Object -First 1"
   Pop $0
   WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
     "Field 8" "State" "$0"
@@ -840,12 +847,6 @@ Function "LeaveVirtualMachineSettings"
     "Field 6" "State"
   ReadIniStr $switchVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
     "Field 8" "State"
-
-  ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
-  ${AndIf} $switchVM == ""
-    MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_NONETWORKSELECTED)
-    Abort
-  ${EndIf}
 
   MessageBox MB_OKCANCEL|MB_ICONQUESTION|MB_DEFBUTTON2 $(STRING_STARTCONFIRM) \
     IDOK leavedist_ok
