@@ -597,6 +597,28 @@ lbl_loopvboxpropcrlf:
       Abort
     ${EndIf}
 
+    ; check CPU support (Virtualization)
+    ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).VirtualizationFirmwareEnabled"
+    Pop $0
+    ${If} $0 == "False$\r$\n"
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_VTDISABLED)
+      Abort
+    ${ElseIf} $0 != "True$\r$\n"
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_VTCHECKFAILED)
+      Abort
+    ${EndIf}
+
+    ; check CPU support (Second Level Address Translation)
+    ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).SecondLevelAddressTranslationExtensions"
+    Pop $0
+    ${If} $0 == "False$\r$\n"
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_SLATDISABLED)
+      Abort
+    ${ElseIf} $0 != "True$\r$\n"
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_SLATCHECKFAILED)
+      Abort
+    ${EndIf}
+
     ; check Internet connectivity
     ; ###TODO###
 

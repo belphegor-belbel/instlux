@@ -50,3 +50,7 @@
 !insertmacro LANG_STRING STRING_VMDISK "ディスクサイズ [メガバイト] (&D):"
 !insertmacro LANG_STRING STRING_VMNETWORK "接続するネットワーク (&C):"
 !insertmacro LANG_STRING STRING_HYPERV_NOEXTERNALSWITCH "Hyper-V 側でインターネットに接続可能な $\"外部$\" タイプの仮想スイッチを作成する必要があります。 Hyper-V などのツールで作成したあと、再度 $\"次へ$\" を押してください。"
+!insertmacro LANG_STRING STRING_HYPERV_VTDISABLED "お使いの CPU が仮想化に対応していないか、 BIOS の設定で無効化されています。 CPU と BIOS の設定をご確認ください。"
+!insertmacro LANG_STRING STRING_HYPERV_VTCHECKFAILED "仮想化機能のチェックに失敗しました。"
+!insertmacro LANG_STRING STRING_HYPERV_SLATDISABLED "お使いの CPU は Secone Level Address Translation (SLAT) に対応していません。 Hyper-V を使用することができません。"
+!insertmacro LANG_STRING STRING_HYPERV_SLATCHECKFAILED "SLAT 機能のチェックに失敗しました。"

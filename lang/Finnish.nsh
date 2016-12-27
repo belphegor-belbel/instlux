@@ -50,3 +50,7 @@
 !insertmacro LANG_STRING STRING_VMDISK "Disk size [by mega-bytes] (&D):"
 !insertmacro LANG_STRING STRING_VMNETWORK "Network to be connected (&C):"
 !insertmacro LANG_STRING STRING_HYPERV_NOEXTERNALSWITCH "$\"External$\" (i.e. able to connect to Internet) type virtual switch is needed. Please create it using Hyper-V tools and push $\"Next$\"."
+!insertmacro LANG_STRING STRING_HYPERV_VTDISABLED "Your CPU does not support virtualization or virtualization is disabled by BIOS setting. Check your CPU and BIOS settings."
+!insertmacro LANG_STRING STRING_HYPERV_VTCHECKFAILED "Could not check virtualization feature."
+!insertmacro LANG_STRING STRING_HYPERV_SLATDISABLED "Your CPU does not support Secone Level Address Translation (SLAT). Unable to use Hyper-V."
+!insertmacro LANG_STRING STRING_HYPERV_SLATCHECKFAILED "Could not check SLAT feature."
