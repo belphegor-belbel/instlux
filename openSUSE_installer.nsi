@@ -10,6 +10,7 @@
 ; variables
 
 Var hwnd
+Var systemDrive
 Var distribution
 Var architecture
 Var environment
@@ -26,10 +27,17 @@ Var diskVM
 Var switchVM
 
 ; -----------------------------------------------------------------------------
+; definitions
+
+!define DISTSELECT_INI "$PLUGINSDIR\DistributionSelection.ini"
+!define VIRTSET_INI "$PLUGINSDIR\VirtualMachineSettings.ini"
+
+; -----------------------------------------------------------------------------
 ; General settings
 
 Name "openSUSE installer"
 Caption "openSUSE installer"
+BrandingText "openSUSE installer / NSIS version ${NSIS_VERSION}"
 OutFile "openSUSE_installer.exe"
 ShowInstDetails "nevershow"
 ShowUninstDetails "nevershow"
@@ -103,6 +111,7 @@ Page custom "ShowVirtualMachineSettings" "LeaveVirtualMachineSettings"
 
 ; -----------------------------------------------------------------------------
 ; get system memory function
+
 Function "GetSystemMemoryInfo"
   ; check RAM (see http://nsis.sourceforge.net/Docs/System/System.html)
   System::Call "*(i 64,i,l,l,l,l,l,l,l)p.r1"
@@ -124,6 +133,7 @@ FunctionEnd ; "GetSystemMemoryInfo"
 
 ; -----------------------------------------------------------------------------
 ; run PowerShell script
+
 !macro RunPowerShellCmdOptions Show CommandLine
   !define execID ${__LINE__}
   InitPluginsDir
@@ -177,8 +187,14 @@ lbl_success_${execID}:
 
 Function .onInit
   InitPluginsDir
-  File /oname=$PLUGINSDIR\DistributionSelection.ini "DistributionSelection.ini"
-  File /oname=$PLUGINSDIR\VirtualMachineSettings.ini "VirtualMachineSettings.ini"
+  File /oname=${DISTSELECT_INI} "DistributionSelection.ini"
+  File /oname=${VIRTSET_INI} "VirtualMachineSettings.ini"
+
+  ExpandEnvStrings $systemDrive "%SYSTEMDRIVE%"
+  ${If} $systemDrive == "%SYSTEMDRIVE%"
+    ; If Windows 9x, SYSTEMDRIVE environment variable is not set..
+    StrCpy $systemDrive "C:"
+  ${EndIf}
 
   Call GetSystemMemoryInfo
   StrCpy $R0 768
@@ -272,6 +288,14 @@ lbl_productdone:
   !undef MUI_LANGDLL_INFO
 FunctionEnd ; ".onInit"
 
+Function un.onInit
+  ExpandEnvStrings $systemDrive "%SYSTEMDRIVE%"
+  ${If} $systemDrive == "%SYSTEMDRIVE%"
+    ; If Windows 9x, SYSTEMDRIVE environment variable is not set..
+    StrCpy $systemDrive "C:"
+  ${EndIf}
+FunctionEnd ; "un.onInit"
+
 ; -----------------------------------------------------------------------------
 ; display distribution
 
@@ -283,16 +307,12 @@ Function "ShowDistributionSelection"
   ; test 64bit
   test64::get_arch
 
-  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 1" "Text" $(STRING_VERSION)
-  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 3" "Text" $(STRING_ARCHITECTURE)
-  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 5" "Text" $(STRING_ENVIRONMENT)
-  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 6" "ListItems" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)|$(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)|$(STRING_ENVIRONMENTSELECTITEM_HYPERV)"
-  WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 7" "State" $(STRING_DISTSELECTIONDESCRIPTION)
+  WriteIniStr ${DISTSELECT_INI} "Field 1" "Text" $(STRING_VERSION)
+  WriteIniStr ${DISTSELECT_INI} "Field 3" "Text" $(STRING_ARCHITECTURE)
+  WriteIniStr ${DISTSELECT_INI} "Field 5" "Text" $(STRING_ENVIRONMENT)
+  WriteIniStr ${DISTSELECT_INI} "Field 6" "ListItems" \
+    "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)|$(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)|$(STRING_ENVIRONMENTSELECTITEM_HYPERV)"
+  WriteIniStr ${DISTSELECT_INI} "Field 7" "State" $(STRING_DISTSELECTIONDESCRIPTION)
 
   ${If} $0 == "x86_64"
     ; when x86_64 is supported..
@@ -300,19 +320,17 @@ Function "ShowDistributionSelection"
     ${If} $mediaVer == ""
     ${OrIf} $mediaX86_64 == "0"
       ; set the latest stable version
-      WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-        "Field 2" "State" "openSUSE Leap 42.2"
+      WriteIniStr ${DISTSELECT_INI} "Field 2" "State" "openSUSE Leap 42.2"
       StrCpy $R1 ""
     ${Else}
       ; set the version of this media
-      WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
+      WriteIniStr ${DISTSELECT_INI} \
         "Field 2" "State" "$(STRING_VERSIONOFTHISMEDIA) ($mediaVer)"
       StrCpy $R1 "$(STRING_VERSIONOFTHISMEDIA) ($mediaVer)|"
     ${EndIf}
 
     ; set currently supported versions
-    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-      "Field 2" "ListItems" \
+    WriteIniStr ${DISTSELECT_INI} "Field 2" "ListItems" \
       "$R1openSUSE Leap 42.2|openSUSE Leap 42.1|openSUSE 13.2|openSUSE 13.1|openSUSE 12.3|openSUSE 12.2|openSUSE 12.1|openSUSE 11.4|openSUSE Tumbleweed"
   ${Else}
     ; when x86_64 is not supported..
@@ -320,46 +338,39 @@ Function "ShowDistributionSelection"
     ${If} $mediaVer == ""
     ${OrIf} $mediaI386 == "0"
       ; set latest stable version
-      WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-        "Field 2" "State" "openSUSE 13.2"
+      WriteIniStr ${DISTSELECT_INI} "Field 2" "State" "openSUSE 13.2"
       StrCpy $R1 ""
     ${Else}
       ; set the version of this media
-      WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-        "Field 2" "State" "$(STRING_VERSIONOFTHISMEDIA) ($mediaVer)"
+      WriteIniStr ${DISTSELECT_INI} "Field 2" "State" \
+        "$(STRING_VERSIONOFTHISMEDIA) ($mediaVer)"
       StrCpy $R1 "$(STRING_VERSIONOFTHISMEDIA) ($mediaVer)|"
     ${EndIf}
 
     ; set currently supported versions
-    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-      "Field 2" "ListItems" \
+    WriteIniStr ${DISTSELECT_INI} "Field 2" "ListItems" \
       "$R1openSUSE 13.2|openSUSE 13.1|openSUSE 12.3|openSUSE 12.2|openSUSE 12.1|openSUSE 11.4|openSUSE Tumbleweed"
 
     ; remove x86_64
-    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-      "Field 4" "State" "i386"
-    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-      "Field 4" "ListItems" "i386"
+    WriteIniStr ${DISTSELECT_INI} "Field 4" "State" "i386"
+    WriteIniStr ${DISTSELECT_INI} "Field 4" "ListItems" "i386"
   ${EndIf}
 
   ${If} $distribution != ""
-    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 2" "State" $distribution
+    WriteIniStr ${DISTSELECT_INI} "Field 2" "State" $distribution
   ${EndIf}
   ${If} $architecture != ""
-    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 4" "State" $architecture
+    WriteIniStr ${DISTSELECT_INI} "Field 4" "State" $architecture
   ${EndIf}
   ${If} $environment != ""
-    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-      "Field 6" "State" $environment
+    WriteIniStr ${DISTSELECT_INI} "Field 6" "State" $environment
   ${Else}
-    WriteIniStr "$PLUGINSDIR\DistributionSelection.ini" \
-      "Field 6" "State" "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)"
+    WriteIniStr ${DISTSELECT_INI} "Field 6" "State" \
+      "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)"
   ${EndIf}
 
   ; show dialog
-  InstallOptions::initDialog /NOUNLOAD "$PLUGINSDIR\DistributionSelection.ini"
+  InstallOptions::initDialog /NOUNLOAD ${DISTSELECT_INI}
   Pop $hwnd
 
   !insertmacro MUI_HEADER_TEXT $(STRING_SELECTDIST_TITLE) $(STRING_SELECTDIST_TEXT)
@@ -368,12 +379,9 @@ Function "ShowDistributionSelection"
 FunctionEnd ; "ShowDistributionSelection"
 
 Function "LeaveDistributionSelection"
-  ReadIniStr $distribution "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 2" "State"
-  ReadIniStr $architecture "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 4" "State"
-  ReadIniStr $environment "$PLUGINSDIR\DistributionSelection.ini" \
-    "Field 6" "State"
+  ReadIniStr $distribution ${DISTSELECT_INI} "Field 2" "State"
+  ReadIniStr $architecture ${DISTSELECT_INI} "Field 4" "State"
+  ReadIniStr $environment ${DISTSELECT_INI} "Field 6" "State"
 
   StrCpy $0 $distribution 14
   ${If} $0 == "openSUSE Leap "
@@ -413,6 +421,7 @@ Function "LeaveDistributionSelection"
     ClearErrors
     ${IfNot} ${IsNT}
       MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOX_OSFAILED)
+      Abort
     ${EndIf}
     ${IfNot} ${AtLeastWinXP}
       MessageBox MB_OK|MB_ICONSTOP $(STRING_VIRTUALBOX_OSFAILED)
@@ -591,6 +600,7 @@ lbl_loopvboxpropcrlf:
     ClearErrors
     ${IfNot} ${IsNT}
       MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_OSFAILED)
+      Abort
     ${EndIf}
     ${IfNot} ${AtLeastWin8}
       MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_OSFAILED)
@@ -788,12 +798,10 @@ SectionEnd
 Function "UpdateVirtualSwitches"
   ${RunPowerShellCmd} "(Get-VmSwitch -SwitchType External).Name -join $\"|$\""
   Pop $0
-  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 8" "ListItems" "$0"
+  WriteIniStr ${VIRTSET_INI} "Field 8" "ListItems" "$0"
   ${RunPowerShellCmd} "(Get-VmSwitch -SwitchType External).Name | Select-Object -First 1"
   Pop $0
-  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 8" "State" "$0"
+  WriteIniStr ${VIRTSET_INI} "Field 8" "State" "$0"
 FunctionEnd ; "UpdateVirtualSwitches"
 
 Function "ShowVirtualMachineSettings"
@@ -802,57 +810,44 @@ Function "ShowVirtualMachineSettings"
     Abort
   ${EndIf}
 
-  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 1" "Text" $(STRING_VMNAME)
-  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 3" "Text" $(STRING_VMMEMORY)
-  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 5" "Text" $(STRING_VMDISK)
-  WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 7" "Text" $(STRING_VMNETWORK)
+  WriteIniStr ${VIRTSET_INI} "Field 1" "Text" $(STRING_VMNAME)
+  WriteIniStr ${VIRTSET_INI} "Field 3" "Text" $(STRING_VMMEMORY)
+  WriteIniStr ${VIRTSET_INI} "Field 5" "Text" $(STRING_VMDISK)
+  WriteIniStr ${VIRTSET_INI} "Field 7" "Text" $(STRING_VMNETWORK)
 
   ${If} $nameVM != ""
-    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-      "Field 2" "State" "$nameVM"
+    WriteIniStr ${VIRTSET_INI} "Field 2" "State" "$nameVM"
   ${Else}
-    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-      "Field 2" "State" "$distribution $architecture"
+    WriteIniStr ${VIRTSET_INI} "Field 2" "State" "$distribution $architecture"
   ${EndIf}
 
   ${If} $memoryVM != ""
-    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-      "Field 4" "State" "$memoryVM"
+    WriteIniStr ${VIRTSET_INI} "Field 4" "State" "$memoryVM"
   ${Else}
-    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-      "Field 4" "State" "1024"
+    WriteIniStr ${VIRTSET_INI} "Field 4" "State" "1024"
   ${EndIf}
 
   ${If} $diskVM != ""
-    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-      "Field 6" "State" "$diskVM"
+    WriteIniStr ${VIRTSET_INI} "Field 6" "State" "$diskVM"
   ${Else}
-    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-      "Field 6" "State" "8192"
+    WriteIniStr ${VIRTSET_INI} "Field 6" "State" "8192"
   ${EndIf}
 
   ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
     ${If} $switchVM != ""
-      WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-        "Field 8" "State" "$switchVM"
+      WriteIniStr ${VIRTSET_INI} "Field 8" "State" "$switchVM"
     ${Else}
       Call UpdateVirtualSwitches
     ${EndIf}
   ${Else}
-    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-        "Field 7" "Flags" "DISABLED"
-    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-        "Field 8" "Flags" "DISABLED"
-    WriteIniStr "$PLUGINSDIR\VirtualMachineSettings.ini" \
-        "Field 9" "Flags" "DISABLED"
+    WriteIniStr ${VIRTSET_INI} "Field 7" "Flags" "DISABLED"
+    WriteIniStr ${VIRTSET_INI} "Field 8" "Flags" "DISABLED"
+    WriteIniStr ${VIRTSET_INI} "Field 8" "ListItems" ""
+    WriteIniStr ${VIRTSET_INI} "Field 9" "Flags" "DISABLED"
   ${EndIf}
 
   ; show dialog
-  InstallOptions::initDialog /NOUNLOAD "$PLUGINSDIR\VirtualMachineSettings.ini"
+  InstallOptions::initDialog /NOUNLOAD ${VIRTSET_INI}
   Pop $hwnd
 
   !insertmacro MUI_HEADER_TEXT $(STRING_VMSETTINGS_TITLE) $(STRING_VMSETTINGS_TEXT)
@@ -861,14 +856,10 @@ Function "ShowVirtualMachineSettings"
 FunctionEnd ; "ShowVirtualMachineSettings"
 
 Function "LeaveVirtualMachineSettings"
-  ReadIniStr $nameVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 2" "State"
-  ReadIniStr $memoryVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 4" "State"
-  ReadInIStr $diskVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 6" "State"
-  ReadIniStr $switchVM "$PLUGINSDIR\VirtualMachineSettings.ini" \
-    "Field 8" "State"
+  ReadIniStr $nameVM ${VIRTSET_INI} "Field 2" "State"
+  ReadIniStr $memoryVM ${VIRTSET_INI} "Field 4" "State"
+  ReadInIStr $diskVM ${VIRTSET_INI} "Field 6" "State"
+  ReadIniStr $switchVM ${VIRTSET_INI} "Field 8" "State"
 
   MessageBox MB_OKCANCEL|MB_ICONQUESTION|MB_DEFBUTTON2 $(STRING_STARTCONFIRM) \
     IDOK leavedist_ok
@@ -1141,9 +1132,9 @@ lbl_hyperverrorsnodelete:
     # Write uninstaller before doing anything else...
     WriteUninstaller "$SMSTARTUP\openSUSE-uninst.exe"
 
-    File /oname=C:\grub.exe "grub.exe"
-    Rename "C:\config.sys" "C:\config-bak.sys"
-    FileOpen $R1 "C:\config.sys" w
+    File /oname=$systemDrive\grub.exe "grub.exe"
+    Rename "$systemDrive\config.sys" "$systemDrive\config-bak.sys"
+    FileOpen $R1 "$systemDrive\config.sys" w
     FileWrite $R1 "[menu]$\r$\n"
     FileWrite $R1 "menuitem=Windows , Start Windows$\r$\n"
     FileWrite $R1 "menuitem=openSUSE installer, openSUSE installer$\r$\n$\r$\n"
@@ -1159,16 +1150,16 @@ lbl_hyperverrorsnodelete:
     WriteUninstaller "$SMSTARTUP\openSUSE-uninst.exe"
 
     ; save timeout value
-    ReadINIStr $0 "C:\boot.ini" "boot loader" "timeout"
-    WriteINIStr "C:\boot.save" "boot loader" "timeout" $0
+    ReadINIStr $0 "$systemDrive\boot.ini" "boot loader" "timeout"
+    WriteINIStr "$systemDrive\boot.save" "boot loader" "timeout" $0
     ; write new values
-    SetFileAttributes "C:\boot.ini" NORMAL
-    WriteINIStr "C:\boot.ini" "boot loader" "timeout" "30"
-    WriteINIStr "C:\boot.ini" "operating systems" "C:\grldr" '"openSUSE installer"'
-    SetFileAttributes "C:\boot.ini" SYSTEM|HIDDEN
+    SetFileAttributes "$systemDrive\boot.ini" NORMAL
+    WriteINIStr "$systemDrive\boot.ini" "boot loader" "timeout" "30"
+    WriteINIStr "$systemDrive\boot.ini" "operating systems" "$systemDrive\grldr" '"openSUSE installer"'
+    SetFileAttributes "$systemDrive\boot.ini" SYSTEM|HIDDEN
 
-    File /oname=C:\grldr "grldr"
-    File /oname=C:\grldr.mbr "grldr.mbr"
+    File /oname=$systemDrive\grldr "grldr"
+    File /oname=$systemDrive\grldr.mbr "grldr.mbr"
   ${ElseIf} $R0 == 'vista'
     # --------------------------------- Windows Vista style bootloader
     ; if running in X64, bcdedit is in %windir%\Sysnative.
@@ -1181,15 +1172,15 @@ lbl_hyperverrorsnodelete:
     # Write uninstaller before doing anything else,
     # but uninstaller is not installed to $SMSTARTUP directly;
     # this is due to UAC ("RunAs" required).
-    WriteUninstaller "C:\openSUSE-uninst.exe"
+    WriteUninstaller "$systemDrive\openSUSE-uninst.exe"
 
     IfFileExists "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe" 0 lbl_nopowershell
     CreateShortcut "$SMSTARTUP\openSUSE setup uninstaller.lnk" \
       "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe" \
-      "Start-Process C:\openSUSE-uninst.exe -Verb RunAs"
+      "Start-Process $systemDrive\openSUSE-uninst.exe -Verb RunAs"
     Goto lbl_powershelldone
 lbl_nopowershell:
-    StrCpy $R0 "C:\openSUSE-uninst.exe"
+    StrCpy $R0 "$systemDrive\openSUSE-uninst.exe"
     MessageBox MB_OK|MB_ICONEXCLAMATION $(STRING_NOPOWERSHELL)
 lbl_powershelldone:
 
@@ -1221,20 +1212,20 @@ lblID:
     ${Else}
       StrCpy $R3 $0
     ${Endif}
-    nsExec::Exec '"$BcdEdit" /set $R3 device partition=C:'
+    nsExec::Exec '"$BcdEdit" /set $R3 device partition=$systemDrive'
     nsExec::Exec '"$BcdEdit" /set $R3 path \grldr.mbr'
     nsExec::Exec '"$BcdEdit" /timeout 30'
     nsExec::Exec '"$BcdEdit" /displayorder $R3 /addlast'
 
-    File /oname=C:\grldr "grldr"
-    File /oname=C:\grldr.mbr "grldr.mbr"
+    File /oname=$systemDrive\grldr "grldr"
+    File /oname=$systemDrive\grldr.mbr "grldr.mbr"
   ${Else} ; bootloader
     ; not supported version
     MessageBox MB_OK $(STRING_NOTSUPPORTED_OS)
     Quit
   ${EndIf}
 
-  FileOpen $R3 "C:\openSUSE_hitme.txt" a 
+  FileOpen $R3 "$systemDrive\openSUSE_hitme.txt" a 
   FileWrite $R3 "This file was created by openSUSE setup installer."
   FileSeek $R3 0 END
   FileClose $R3
@@ -1305,7 +1296,7 @@ lblID:
     StrCpy $R5 "normal"
   ${EndIf}
 
-  FileOpen $R6 C:\menu.lst a
+  FileOpen $R6 $systemDrive\menu.lst a
   FileWrite $R6 "hiddenmenu$\r$\n"
   FileWrite $R6 "timeout 0$\r$\n"
 
@@ -1318,7 +1309,7 @@ lblID:
   FileClose $R6
 
   # uncompress files
-  nsExec::Exec '"compact" /u C:\grldr C:\grldr.mbr C:\menu.lst $INSTDIR\linux $INSTDIR\initrd'
+  nsExec::Exec '"compact" /u $systemDrive\grldr $systemDrive\grldr.mbr $systemDrive\menu.lst $INSTDIR\linux $INSTDIR\initrd'
 
   SetRebootFlag True
 SectionEnd ; "Install"
@@ -1332,26 +1323,26 @@ Section "Uninstall"
   Pop $R0
 
   ${If} $R0 == '9x'
-    Delete /REBOOTOK "C:\grub.exe"
-    Delete /REBOOTOK "C:\config.sys"
-    Rename "C:\config-bak.sys" "C:\config.sys"
+    Delete /REBOOTOK "$systemDrive\grub.exe"
+    Delete /REBOOTOK "$systemDrive\config.sys"
+    Rename "$systemDrive\config-bak.sys" "$systemDrive\config.sys"
 
     Delete /REBOOTOK "$SMSTARTUP\openSUSE-uninst.exe"
   ${ElseIf} $R0 == 'nt'
-    Delete /REBOOTOK "C:\grldr"
-    SetFileAttributes "C:\boot.ini" NORMAL
-    DeleteINIStr "C:\boot.ini" "operating systems" "C:\grldr"
+    Delete /REBOOTOK "$systemDrive\grldr"
+    SetFileAttributes "$systemDrive\boot.ini" NORMAL
+    DeleteINIStr "$systemDrive\boot.ini" "operating systems" "$systemDrive\grldr"
 
     ; restore timeout
-    DeleteINIStr "C:\boot.ini" "boot loader" "timeout"
-    ReadINIStr $0 "C:\boot.save" "boot loader" "timeout"
-    Delete "C:\boot.save"
-    WriteINIStr "C:\boot.ini" "boot loader" "timeout" $0
-    SetFileAttributes "C:\boot.ini" SYSTEM|HIDDEN
+    DeleteINIStr "$systemDrive\boot.ini" "boot loader" "timeout"
+    ReadINIStr $0 "$systemDrive\boot.save" "boot loader" "timeout"
+    Delete "$systemDrive\boot.save"
+    WriteINIStr "$systemDrive\boot.ini" "boot loader" "timeout" $0
+    SetFileAttributes "$systemDrive\boot.ini" SYSTEM|HIDDEN
 
     Delete /REBOOTOK "$SMSTARTUP\openSUSE-uninst.exe"
   ${ElseIf} $R0 == 'vista'
-    Delete /REBOOTOK "C:\grldr"
+    Delete /REBOOTOK "$systemDrive\grldr"
 
     ; if running in X64, bcdedit is in %windir%\Sysnative.
     ${If} ${RunningX64}
@@ -1372,7 +1363,7 @@ Section "Uninstall"
     ${Endif}
 
     Delete /REBOOTOK "$SMSTARTUP\openSUSE setup uninstaller.lnk"
-    Delete /REBOOTOK "C:\openSUSE-uninst.exe"
+    Delete /REBOOTOK "$systemDrive\openSUSE-uninst.exe"
   ${Else}
     ; not supported version
     MessageBox MB_OK $(STRING_NOTSUPPORTED_OS)
@@ -1380,11 +1371,11 @@ Section "Uninstall"
   ${EndIf}
 
   ; cannot use $INSTDIR variable.
-  Delete /REBOOTOK "C:\openSUSE\linux"
-  Delete /REBOOTOK "C:\openSUSE\initrd"
-  RmDir /REBOOTOK /r "C:\openSUSE"
-  Delete /REBOOTOK "C:\menu.lst"
-  Delete /REBOOTOK "C:\grldr"
-  Delete /REBOOTOK "C:\grldr.mbr"
-  Delete /REBOOTOK "C:\openSUSE_hitme.txt"
+  Delete /REBOOTOK "$systemDrive\openSUSE\linux"
+  Delete /REBOOTOK "$systemDrive\openSUSE\initrd"
+  RmDir /REBOOTOK /r "$systemDrive\openSUSE"
+  Delete /REBOOTOK "$systemDrive\menu.lst"
+  Delete /REBOOTOK "$systemDrive\grldr"
+  Delete /REBOOTOK "$systemDrive\grldr.mbr"
+  Delete /REBOOTOK "$systemDrive\openSUSE_hitme.txt"
 SectionEnd ; "Uninstall"
