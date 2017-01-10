@@ -1,6 +1,7 @@
 !define LANG "JAPANESE"
 
 !insertmacro LANG_STRING STRING_REFUSE_UEFI "このコンピュータは UEFI ブートモードを使用していますが、このインストーラでは対応していません。このマシン自身にインストールしたい場合は、 openSUSE のインストールメディア (CD, DVD 等) を利用して起動してください。"
+!insertmacro LANG_STRING STRING_WINDOWSME_NOTSUPPORTED "Windows Me はデュアルブートにも仮想化にも対応していないため、本インストーラはお使いいただけません。 openSUSE のインストールメディア (CD, DVD 等) を利用して起動してください。"
 !insertmacro LANG_STRING STRING_NOTADMIN "現在のユーザ ($0) には、 openSUSE セットアップインストーラを利用するのに必要な管理者権限がありません。"
 !insertmacro LANG_STRING STRING_LANGDLL_WINDOWTITLE "openSUSE セットアップインストーラ: 言語の選択"
 !insertmacro LANG_STRING STRING_LANGDLL_INFO "お使いの言語を選択してください:"

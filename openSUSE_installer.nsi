@@ -190,6 +190,11 @@ Function .onInit
   File /oname=${DISTSELECT_INI} "DistributionSelection.ini"
   File /oname=${VIRTSET_INI} "VirtualMachineSettings.ini"
 
+  ${If} ${IsWinMe}
+    MessageBox MB_OK|MB_ICONSTOP $(STRING_WINDOWSME_NOTSUPPORTED)
+    Quit
+  ${EndIf}
+
   ExpandEnvStrings $systemDrive "%SYSTEMDRIVE%"
   ${If} $systemDrive == "%SYSTEMDRIVE%"
     ; If Windows 9x, SYSTEMDRIVE environment variable is not set..

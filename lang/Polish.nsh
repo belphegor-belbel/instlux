@@ -1,6 +1,7 @@
 !define LANG "POLISH"
 
 !insertmacro LANG_STRING STRING_REFUSE_UEFI "This computer currently uses an UEFI boot mode, but it is not supported by this installer. Please use the openSUSE install media (CD, DVD, etc.) instead to install to this machine itself."
+!insertmacro LANG_STRING STRING_WINDOWSME_NOTSUPPORTED "Windows Me does not support dual boot nor virtualization, so this installer cannot be used. Please use the openSUSE install media (CD, DVD, etc.) instead."
 !insertmacro LANG_STRING STRING_NOTADMIN "You ($0) do not have administrator privileges to use openSUSE setup installer."
 !insertmacro LANG_STRING STRING_LANGDLL_WINDOWTITLE "openSUSE setup installer: Select language"
 !insertmacro LANG_STRING STRING_LANGDLL_INFO "Please select your language:"
