@@ -23,7 +23,7 @@
 !insertmacro LANG_STRING STRING_ENVIRONMENTSELECTITEM_DUALBOOT "このマシン自身 (デュアルブート)"
 !insertmacro LANG_STRING STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX "VirtualBox を利用した仮想マシン"
 !insertmacro LANG_STRING STRING_ENVIRONMENTSELECTITEM_HYPERV "Hyper-V を利用した仮想マシン"
-!insertmacro LANG_STRING STRING_DISTSELECTIONDESCRIPTION "まずはインストールしたいバージョンとアーキテクチャを選択してください。最新バージョンをお勧めしますが、他のバージョンでもかまいません。\r\n\r\n次にインストールする環境を選択してください。 'このマシン自身' を選択すると、デュアルブート環境 (openSUSE と Windows を起動時に切り替える環境) を構築することができます。 '仮想マシン' を選択すると、仮想化技術を利用して openSUSE を Windows 内にインストールすることができます。 openSUSE を初めてお使いになる方の場合は、 '仮想マシン' をお勧めします。"
+!insertmacro LANG_STRING STRING_DISTSELECTIONDESCRIPTION "まずはインストールしたいバージョンとアーキテクチャを選択してください。最新バージョンをお勧めしますが、他のバージョンでもかまいません。\r\n\r\n次にインストールする環境を選択してください。\r\n'このマシン自身' を選択すると、デュアルブート環境 (openSUSE と Windows を起動時に切り替える環境) を構築することができます。\r\n'仮想マシン' を選択すると、仮想化技術を利用して openSUSE を Windows 内にインストールすることができます。\r\nopenSUSE を初めてお使いになる方の場合は、 '仮想マシン' をお勧めします。"
 !insertmacro LANG_STRING STRING_VIRTUALBOXINSTALLATIONCONFIRM "VirtualBox がインストールされていません。最新バージョンをダウンロードしてインストールします。よろしいですか？"
 !insertmacro LANG_STRING STRING_VIRTUALBOXINSTALLATIONFAILED "VirtualBox のインストールが失敗しました。インストールを続行できません。インストール時のエラーを修正してやり直してください。"
 !insertmacro LANG_STRING STRING_VIRTUALBOX_OSFAILED "VirtualBox はお使いのオペレーティングシステムに対応していません。 Windows XP もしくはそれ以降のバージョンが必要です。"
