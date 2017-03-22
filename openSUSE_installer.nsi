@@ -187,6 +187,8 @@ lbl_success_${execID}:
 
 Function .onInit
   InitPluginsDir
+  # temporary workaround for mingw
+  File /oname=$PLUGINSDIR\libwinpthread-1.dll "libwinpthread-1.dll"
   File /oname=${DISTSELECT_INI} "DistributionSelection.ini"
   File /oname=${VIRTSET_INI} "VirtualMachineSettings.ini"
 
