@@ -55,3 +55,4 @@
 !insertmacro LANG_STRING STRING_HYPERV_VTCHECKFAILED "Could not check virtualization feature."
 !insertmacro LANG_STRING STRING_HYPERV_SLATDISABLED "Your CPU does not support Secone Level Address Translation (SLAT). Unable to use Hyper-V."
 !insertmacro LANG_STRING STRING_HYPERV_SLATCHECKFAILED "Could not check SLAT feature."
+!insertmacro LANG_STRING STRING_PRELIM_WORK_COMPLETED "Preliminary work for installing openSUSE was completed.$\r$\nMain component of openSUSE installer can be started by rebooting system and by selecting $\"openSUSE installer$\" at the boot menu.$\r$\n$\r$\nAfter openSUSE installation was succeeded, you can cleanup this installation fragments by rebooting Windows again.$\r$\n(Cleanup process will be started while Windows startup.)"

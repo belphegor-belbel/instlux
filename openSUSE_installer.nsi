@@ -1317,6 +1317,8 @@ lblID:
   nsExec::Exec '"compact" /u $systemDrive\grldr $systemDrive\grldr.mbr $systemDrive\menu.lst $INSTDIR\linux $INSTDIR\initrd'
 
   SetRebootFlag True
+
+  MessageBox MB_OK|MB_ICONINFORMATION $(STRING_PRELIM_WORK_COMPLETED)
 SectionEnd ; "Install"
 
 ; -----------------------------------------------------------------------------
