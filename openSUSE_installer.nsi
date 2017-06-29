@@ -316,7 +316,7 @@ Function "ShowDistributionSelection"
   WriteIniStr ${DISTSELECT_INI} "Field 3" "Text" $(STRING_ARCHITECTURE)
   WriteIniStr ${DISTSELECT_INI} "Field 5" "Text" $(STRING_ENVIRONMENT)
   WriteIniStr ${DISTSELECT_INI} "Field 6" "ListItems" \
-    "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)|$(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)|$(STRING_ENVIRONMENTSELECTITEM_HYPERV)"
+    "$(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)|$(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)|$(STRING_ENVIRONMENTSELECTITEM_HYPERV)|$(STRING_ENVIRONMENTSELECTITEM_LINUXONWINDOWS)"
   WriteIniStr ${DISTSELECT_INI} "Field 7" "State" $(STRING_DISTSELECTIONDESCRIPTION)
 
   ${If} $0 == "x86_64"
@@ -767,6 +767,96 @@ lbl_loophypervpropcrlf:
 
     IntOp $R4 $R4 + 1
     StrCpy $dirVM $dirVM $R4 0
+  ${ElseIf} $environment == $(STRING_ENVIRONMENTSELECTITEM_LINUXONWINDOWS)
+    ; check operating system (Windows 10 version 10.0.16226 or later required)
+    ClearErrors
+    ${IfNot} ${IsNT}
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_LINUXONWIN_OSFAILED)
+      Abort
+    ${EndIf}
+    ${IfNot} ${AtLeastWin10}
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_LINUXONWIN_OSFAILED)
+      Abort
+    ${EndIf}
+
+    ; check whether it is server os or not (server os is not supported yet)
+    ${If} ${IsServerOS}
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_LINUXONWIN_SERVEROSFAILED)
+      Abort
+    ${EndIf}
+
+    ; check Internet connectivity
+    ; ###TODO###
+
+    ; check free storage (8GB or more needed)
+    ; ###TODO###
+
+    ; check powershell (required for later procedure)
+    IfFileExists "$SYSDIR\WindowsPowerShell\v1.0\PowerShell.exe" lbl_powershelllinuxonwin
+    MessageBox MB_OK|MB_ICONSTOP $(STRING_NOPOWERSHELLLINUXONWIN)
+    Abort
+lbl_powershelllinuxonwin:
+
+    ; check operating system (Windows 10 version 10.0.16226 or later required)
+    ${RunPowerShellCmd} "[System.Environment]::OSVersion.Version.Build"
+    Pop $0
+    ${If} $0 < 16226
+      MessageBox MB_OK|MB_ICONSTOP $(STRING_LINUXONWIN_OSFAILED)
+      Abort
+    ${EndIf}
+
+    ; check whether Linux subsystem is installed or not
+    ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State"
+    Pop $0
+    ${If} $0 == "Disabled$\r$\n"
+      MessageBox MB_OKCANCEL|MB_ICONQUESTION $(STRING_LINUXONWININSTALLATIONCONFIRM) \
+        IDOK lbl_installlinuxonwin
+        Abort
+
+lbl_installlinuxonwin:
+      ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart).Online 3> $$null"
+      Pop $0
+      ${If} $0 != "True$\r$\n"
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_LINUXONWININSTALLFAILED)
+        Abort
+      ${EndIf}
+    ${ElseIf} $0 != "Enabled$\r$\n"
+      MessageBox MB_OK|MB_ICONSTOP "$(STRING_LINUXONWINCHECKFAILED)"
+      Abort
+    ${EndIf}
+
+    ; check reboot is needed or not
+    ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart).RestartNeeded 3> $$null"
+    Pop $0
+    ${If} $0 == "True$\r$\n"
+      MessageBox MB_OK|MB_ICONINFORMATION $(STRING_LINUXONWINREBOOTREQUIRED)
+      ; installer should quit because reboot is needed
+      Quit
+    ${EndIf}
+
+    ; check whether developer license is enabled or not
+    ${RunPowerShellCmd} "try { (Get-WindowsDeveloperLicense).IsValid } catch [System.InvalidOperationException] { $\"False$\" }"
+    Pop $0
+    ${If} $0 != "True$\r$\n"
+      MessageBox MB_OKCANCEL|MB_ICONINFORMATION $(STRING_LINUXONWIN_DEVLICENSECONFIRM) \
+        IDOK lbl_enabledevelopermode
+        Abort
+
+lbl_enabledevelopermode:
+      ${Do}
+        ${RunPowerShellCmd} "Show-WindowsDeveloperLicenseRegistration"
+
+        MessageBox MB_OK|MB_ICONINFORMATION $(STRING_LINUXONWIN_DEVLICENSECONFIRM_PROCEED) \
+
+        ${RunPowerShellCmd} "try { (Get-WindowsDeveloperLicense).IsValid } catch [System.InvalidOperationException] { $\"False$\" }"
+        Pop $0
+      ${LoopUntil} $0 == "True$\r$\n"
+    ${EndIf}
+
+    MessageBox MB_OKCANCEL|MB_ICONQUESTION|MB_DEFBUTTON2 $(STRING_STARTCONFIRM) \
+      IDOK leavedist_ok_linuxonwin
+    Abort
+leavedist_ok_linuxonwin:
   ${Else}
     ; check bootloader when install to real (i.e. not virtual) machine
     Call CheckBootloader
@@ -812,6 +902,7 @@ FunctionEnd ; "UpdateVirtualSwitches"
 Function "ShowVirtualMachineSettings"
   ; If not virtual machine, skip it
   ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_DUALBOOT)
+  ${OrIf} $environment == $(STRING_ENVIRONMENTSELECTITEM_LINUXONWINDOWS)
     Abort
   ${EndIf}
 
@@ -1061,6 +1152,18 @@ lbl_hyperverrorsnodelete:
       MessageBox MB_OK|MB_ICONSTOP $(STRING_CREATEVMERROR)
       Abort
     ${EndIf}
+  ${ElseIf} $environment == $(STRING_ENVIRONMENTSELECTITEM_LINUXONWINDOWS)
+    ${If} $distribution == "openSUSE Leap 42.1"
+    ${OrIf} $distribution == "openSUSE Leap 42.2"
+    ${OrIf} $distribution == "openSUSE Leap 42.3"
+      ; open Microsoft Store
+      MessageBox MB_OK|MB_ICONINFORMATION "$(STRING_LINUXONWIN_BEFORESTORE)"
+      ExecShell "open" "https://www.microsoft.com/store/p/app/9njvjts82tjx"
+    ${Else}
+      MessageBox MB_OK|MB_ICONSTOP "$(STRING_LINUXONWIN_NOTFOUNDONSTORE)"
+    ${EndIf}
+
+    Return
   ${EndIf}
 
   SetOutPath $INSTDIR
