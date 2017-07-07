@@ -612,28 +612,6 @@ lbl_loopvboxpropcrlf:
       Abort
     ${EndIf}
 
-    ; check CPU support (Virtualization)
-    ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).VirtualizationFirmwareEnabled"
-    Pop $0
-    ${If} $0 == "False$\r$\n"
-      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_VTDISABLED)
-      Abort
-    ${ElseIf} $0 != "True$\r$\n"
-      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_VTCHECKFAILED)
-      Abort
-    ${EndIf}
-
-    ; check CPU support (Second Level Address Translation)
-    ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).SecondLevelAddressTranslationExtensions"
-    Pop $0
-    ${If} $0 == "False$\r$\n"
-      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_SLATDISABLED)
-      Abort
-    ${ElseIf} $0 != "True$\r$\n"
-      MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_SLATCHECKFAILED)
-      Abort
-    ${EndIf}
-
     ; check Internet connectivity
     ; ###TODO###
 
@@ -662,7 +640,7 @@ lbl_powershellhyperv:
       ${RunPowerShellCmd} "Import-Module ServerManager; (Get-WindowsFeature Hyper-V).Installed"
     ${Else}
       ; check whether Hyper-V (for client OS) is installed or not
-      ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All).State"
+      ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All).State -and (Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-Hypervisor).State -and (Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-Services).State"
     ${EndIf}
     Pop $0
     ${If} $0 == "False$\r$\n"
@@ -673,10 +651,32 @@ lbl_powershellhyperv:
           Abort
 
 lbl_installhyperv:
+      ; check CPU support (Virtualization)
+      ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).VirtualizationFirmwareEnabled"
+      Pop $0
+      ${If} $0 == "False$\r$\n"
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_VTDISABLED)
+        Abort
+      ${ElseIf} $0 != "True$\r$\n"
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_VTCHECKFAILED)
+        Abort
+      ${EndIf}
+
+      ; check CPU support (Second Level Address Translation)
+      ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).SecondLevelAddressTranslationExtensions"
+      Pop $0
+      ${If} $0 == "False$\r$\n"
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_SLATDISABLED)
+        Abort
+      ${ElseIf} $0 != "True$\r$\n"
+        MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_SLATCHECKFAILED)
+        Abort
+      ${EndIf}
+
       ${If} ${IsServerOS}
         ${RunPowerShellCmd} "Import-Module ServerManager; (Add-WindowsFeature Hyper-V).Success"
       ${Else}
-        ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -NoRestart).Online"
+        ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -NoRestart).Online -and (Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -NoRestart).Online -and (Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-Hypervisor -NoRestart).Online -and (Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-Services -NoRestart).Online"
       ${EndIf}
       Pop $0
       StrLen $1 $0
