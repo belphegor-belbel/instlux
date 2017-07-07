@@ -243,14 +243,14 @@ lbl_lowmemoryok:
 
   StrCpy $R2 $R1 255 2 ; remove "/ "
 
-  ; remove after "-"
+  ; remove after LF
   StrCpy $R3 0
-lbl_loophyphen:
+lbl_loopLF:
   IntOp $R3 $R3 + 1
   StrCpy $R4 $R2 1 $R3
-  StrCmp $R4 "-" lbl_loopexit
+  StrCmp $R4 "$\n" lbl_loopexit
   StrCmp $R4 "" lbl_loopexit
-  Goto lbl_loophyphen
+  Goto lbl_loopLF
 lbl_loopexit:
 
   StrCpy $mediaVer $R2 $R3
