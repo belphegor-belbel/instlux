@@ -44,7 +44,7 @@
 !insertmacro LANG_STRING STRING_HYPERVTOOLSINSTALLFAILED "Installation af administrationsværktøjer til Hyper-V mislykkedes: $2"
 !insertmacro LANG_STRING STRING_HYPERVTOOLSCHECKFAILED "Tjek af administrationsværktøjer til Hyper-V mislykkedes: $0"
 !insertmacro LANG_STRING STRING_HYPERVTOOLSREBOOTREQUIRED "Administrationsværktøjer til Hyper-V blev installeret. Genstart venligst dit system og kør denne opsætning igen."
-!insertmacro LANG_STRING STRING_VMSETTINGS_TITLE "Indstillinger for virtuel maskine
+!insertmacro LANG_STRING STRING_VMSETTINGS_TITLE "Indstillinger for virtuel maskine"
 !insertmacro LANG_STRING STRING_VMSETTINGS_TEXT "Sæt venligst indstillinger for virtuel maskine."
 !insertmacro LANG_STRING STRING_VMNAME "Navn på virtuel maskine (&N):"
 !insertmacro LANG_STRING STRING_VMMEMORY "Hukommelse [i megabytes] (&M):"
