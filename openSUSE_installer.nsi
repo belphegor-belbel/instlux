@@ -15,6 +15,7 @@ Var distribution
 Var architecture
 Var environment
 Var bcdedit
+Var bcdStore
 Var instsource
 Var mediaVer
 Var mediaI386
@@ -863,9 +864,25 @@ leavedist_ok_linuxonwin:
     Pop $R0
 
     ${If} $R0 == 'vista'
+      ; check BCD store
+      nsExec::ExecToStack "cmd /c $\"wmic Volume where SystemVolume=true get DeviceID | findstr /B /L \$\""
+      Pop $1
+      Pop $1
+      StrCpy $2 0
+lbl_loopvolumespaces:
+      IntOp $2 $2 + 1
+      StrCpy $3 $1 1 $2
+      StrCmp $3 " " lbl_loopexitvolumespaces
+      StrCmp $3 "$\r" lbl_loopexitvolumespaces
+      StrCmp $3 "$\n" lbl_loopexitvolumespaces
+      Goto lbl_loopvolumespaces
+lbl_loopexitvolumespaces:
+      StrCpy $4 $1 $2
+      StrCpy $bcdStore "$4\boot\bcd"
+
       ; check whether UEFI boot mode is activated or not
       ExpandEnvStrings $0 %COMSPEC%
-      nsExec::ExecToStack '"$0" /C "$bcdedit /enum bootmgr | findstr /I ^path | findstr /I \.efi$$"'
+      nsExec::ExecToStack '"$0" /C "$bcdedit /store $bcdStore /enum bootmgr | findstr /I ^path | findstr /I \.efi$$"'
       Pop $1
       Pop $1
       StrLen $0 $1
@@ -1292,10 +1309,26 @@ lbl_nopowershell:
     MessageBox MB_OK|MB_ICONEXCLAMATION $(STRING_NOPOWERSHELL)
 lbl_powershelldone:
 
+    ; check BCD store
+    nsExec::ExecToStack "cmd /c $\"wmic Volume where SystemVolume=true get DeviceID | findstr /B /L \$\""
+    Pop $1
+    Pop $1
+    StrCpy $2 0
+lbl_loopvolumespaces:
+    IntOp $2 $2 + 1
+    StrCpy $3 $1 1 $2
+    StrCmp $3 " " lbl_loopexitvolumespaces
+    StrCmp $3 "$\r" lbl_loopexitvolumespaces
+    StrCmp $3 "$\n" lbl_loopexitvolumespaces
+    Goto lbl_loopvolumespaces
+lbl_loopexitvolumespaces:
+    StrCpy $4 $1 $2
+    StrCpy $bcdStore "$4\boot\bcd"
+
     # check registry if boot ID was already generated or not
     ReadRegStr $0 HKLM "Software\openSUSE\openSUSE-Installer Loader" "bootmgr"
     ${If} $0 == ""
-      nsExec::ExecToStack '"$BcdEdit" /create /d "openSUSE installer" /application bootsector'
+      nsExec::ExecToStack '"$BcdEdit" /store $bcdStore /create /d "openSUSE installer" /application bootsector'
       Pop $0
       ${If} $0 != 0
         StrCpy $0 bcdedit.exe
@@ -1320,10 +1353,10 @@ lblID:
     ${Else}
       StrCpy $R3 $0
     ${Endif}
-    nsExec::Exec '"$BcdEdit" /set $R3 device partition=$systemDrive'
-    nsExec::Exec '"$BcdEdit" /set $R3 path \grldr.mbr'
-    nsExec::Exec '"$BcdEdit" /timeout 30'
-    nsExec::Exec '"$BcdEdit" /displayorder $R3 /addlast'
+    nsExec::Exec '"$BcdEdit" /store $bcdStore /set $R3 device partition=$systemDrive'
+    nsExec::Exec '"$BcdEdit" /store $bcdStore /set $R3 path \grldr.mbr'
+    nsExec::Exec '"$BcdEdit" /store $bcdStore /timeout 30'
+    nsExec::Exec '"$BcdEdit" /store $bcdStore /displayorder $R3 /addlast'
 
     File /oname=$systemDrive\grldr "grldr"
     File /oname=$systemDrive\grldr.mbr "grldr.mbr"
@@ -1461,13 +1494,28 @@ Section "Uninstall"
       StrCpy $BcdEdit "bcdedit"
     ${EndIf}
 
+    ; check BCD store
+    nsExec::ExecToStack "cmd /c $\"wmic Volume where SystemVolume=true get DeviceID | findstr /B /L \$\""
+    Pop $1
+    Pop $1
+    StrCpy $2 0
+lbl_loopvolumespaces:
+    IntOp $2 $2 + 1
+    StrCpy $3 $1 1 $2
+    StrCmp $3 " " lbl_loopexitvolumespaces
+    StrCmp $3 "$\r" lbl_loopexitvolumespaces
+    StrCmp $3 "$\n" lbl_loopexitvolumespaces
+    Goto lbl_loopvolumespaces
+lbl_loopexitvolumespaces:
+    StrCpy $4 $1 $2
+    StrCpy $bcdStore "$4\boot\bcd"
+
     ReadRegStr $0 HKLM "Software\openSUSE\openSUSE-Installer Loader" "bootmgr"
     ${If} $0 != ""
-      nsExec::Exec '"$BcdEdit" /delete $0'
+      nsExec::Exec '"$BcdEdit" /store $bcdStore /delete $0'
       Pop $0
       ${If} $0 != 0
-        StrCpy $0 bcdedit.exe
-        MessageBox MB_OK '"$BcdEdit" /delete $0 failed'
+        MessageBox MB_OK '"$BcdEdit" /store $bcdStore /delete $0 failed'
       ${Endif}
       DeleteRegKey HKLM "Software\openSUSE"
     ${Endif}
