@@ -56,6 +56,7 @@
 !insertmacro LANG_STRING STRING_HYPERV_SLATDISABLED "Din CPU understøtter ikke Second Level Address Translation (SLAT). Kan ikke bruge Hyper-V."
 !insertmacro LANG_STRING STRING_HYPERV_SLATCHECKFAILED "Kunne ikke tjekke SLAT-funktionalitet."
 !insertmacro LANG_STRING STRING_PRELIM_WORK_COMPLETED "Forberedende arbejde for installation af openSUSE blev fuldført.$\r$\nHovedkomponenten af openSUSE-installationsprogrammet kan startes ved at genstarte systemet og vælge $\"openSUSE-installationsprogram$\" i bootmenuen.$\r$\n$\r$\nEfter installationen af openSUSE kan du rydde op i disse installationsfragmenter ved at genstarte Windows igen.$\r$\n(oprydningsprocessen vil starte mens Windows starter)."
+!insertmacro LANG_STRING STRING_PRELIM_WORK_COMPLETED_SERVERCORE "Preliminary work for installing openSUSE was completed.$\r$\nMain component of openSUSE installer can be started by rebooting system and by selecting $\"openSUSE installer$\" at the boot menu.$\r$\n$\r$\nAfter openSUSE installation was succeeded, you can cleanup this installation fragments by rebooting Windows again and by running $systemDrive\openSUSE-uninst.exe."
 !insertmacro LANG_STRING STRING_ENVIRONMENTSELECTITEM_LINUXONWINDOWS "Indbygget kørsel ved brug af Windows-undersystem til Linux"
 !insertmacro LANG_STRING STRING_LINUXONWIN_OSFAILED "Windows 10 version 10.0.16226 eller senere kræves for indbygget kørsel."
 !insertmacro LANG_STRING STRING_LINUXONWIN_SERVEROSFAILED "Windows-undersystem til Linux understøtter ikke server OS."

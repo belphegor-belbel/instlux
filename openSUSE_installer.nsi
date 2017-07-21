@@ -1454,7 +1454,11 @@ lblID:
 
   SetRebootFlag True
 
-  MessageBox MB_OK|MB_ICONINFORMATION $(STRING_PRELIM_WORK_COMPLETED)
+  ; check GUI (Startup shortcut won't be run if Server Core is used)
+  IfFileExists "$WINDIR\explorer.exe" 0 +2
+    MessageBox MB_OK|MB_ICONINFORMATION $(STRING_PRELIM_WORK_COMPLETED)
+  IfFileExists "$WINDIR\explorer.exe" +2 0
+    MessageBox MB_OK|MB_ICONINFORMATION $(STRING_PRELIM_WORK_COMPLETED_SERVERCORE)
 SectionEnd ; "Install"
 
 ; -----------------------------------------------------------------------------

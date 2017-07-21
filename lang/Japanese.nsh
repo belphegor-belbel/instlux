@@ -56,6 +56,7 @@
 !insertmacro LANG_STRING STRING_HYPERV_SLATDISABLED "お使いの CPU は Secone Level Address Translation (SLAT) に対応していません。 Hyper-V を使用することができません。"
 !insertmacro LANG_STRING STRING_HYPERV_SLATCHECKFAILED "SLAT 機能のチェックに失敗しました。"
 !insertmacro LANG_STRING STRING_PRELIM_WORK_COMPLETED "openSUSE をインストールするための前作業が完了しました。$\r$\nここからシステムを再起動し、起動時のメニューで $\"openSUSE installer$\" を選択することで、openSUSE インストーラ本体を起動することができます。$\r$\n$\r$\nなお、 openSUSE のインストールが完了しましたら、再度 Windows を起動していただくことで、 Windows 側に設定した openSUSE インストーラをクリーンアップすることができます。$\r$\n(Windows のスタートアップでクリーンアップ処理が動作します)"
+!insertmacro LANG_STRING STRING_PRELIM_WORK_COMPLETED_SERVERCORE "openSUSE をインストールするための前作業が完了しました。$\r$\nここからシステムを再起動し、起動時のメニューで $\"openSUSE installer$\" を選択することで、openSUSE インストーラ本体を起動することができます。$\r$\n$\r$\nなお、 openSUSE のインストールが完了しましたら、再度 Windows を起動し、 $systemDrive\openSUSE-uninst.exe を実行していただくことで、 Windows 側に設定した openSUSE インストーラをクリーンアップすることができます。"
 !insertmacro LANG_STRING STRING_ENVIRONMENTSELECTITEM_LINUXONWINDOWS "Windows Subsystem for Linux を利用したネイティブ実行"
 !insertmacro LANG_STRING STRING_LINUXONWIN_OSFAILED "ネイティブ実行でインストールするには、 Windows 10 バージョン 10.0.16226 またはそれ以降が必要です。"
 !insertmacro LANG_STRING STRING_LINUXONWIN_SERVEROSFAILED "Windows Subsystem for Linux はサーバ OS に対応していません。"

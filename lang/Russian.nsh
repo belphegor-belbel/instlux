@@ -56,6 +56,7 @@
 !insertmacro LANG_STRING STRING_HYPERV_SLATDISABLED "Your CPU does not support Secone Level Address Translation (SLAT). Unable to use Hyper-V."
 !insertmacro LANG_STRING STRING_HYPERV_SLATCHECKFAILED "Could not check SLAT feature."
 !insertmacro LANG_STRING STRING_PRELIM_WORK_COMPLETED "Preliminary work for installing openSUSE was completed.$\r$\nMain component of openSUSE installer can be started by rebooting system and by selecting $\"openSUSE installer$\" at the boot menu.$\r$\n$\r$\nAfter openSUSE installation was succeeded, you can cleanup this installation fragments by rebooting Windows again.$\r$\n(Cleanup process will be started while Windows startup.)"
+!insertmacro LANG_STRING STRING_PRELIM_WORK_COMPLETED_SERVERCORE "Preliminary work for installing openSUSE was completed.$\r$\nMain component of openSUSE installer can be started by rebooting system and by selecting $\"openSUSE installer$\" at the boot menu.$\r$\n$\r$\nAfter openSUSE installation was succeeded, you can cleanup this installation fragments by rebooting Windows again and by running $systemDrive\openSUSE-uninst.exe."
 !insertmacro LANG_STRING STRING_ENVIRONMENTSELECTITEM_LINUXONWINDOWS "Native run using Windows Subsystem for Linux"
 !insertmacro LANG_STRING STRING_LINUXONWIN_OSFAILED "Windows 10 version 10.0.16226 or later is required for native run."
 !insertmacro LANG_STRING STRING_LINUXONWIN_SERVEROSFAILED "Windows Subsystem for Linux does not support server OS."
