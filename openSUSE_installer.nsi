@@ -1411,6 +1411,8 @@ lblID:
     StrCpy $R4 "pt-br"
   ${ElseIf} $LANGUAGE == ${LANG_POLISH}
     StrCpy $R4 "pl"
+  ${ElseIf} $LANGUAGE == ${LANG_LITHUANIAN}
+    StrCpy $R4 "lt"
   ${EndIf}
 
   # retrieve screen resolution
