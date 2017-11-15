@@ -69,3 +69,4 @@
 !insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM_PROCEED "Push OK button after enabling developer mode."
 !insertmacro LANG_STRING STRING_LINUXONWIN_BEFORESTORE "Now opening Microsoft Store. Push $\"Get the app$\" or $\"install$\" to install. After installation, you can start openSUSE from start menu."
 !insertmacro LANG_STRING STRING_LINUXONWIN_NOTFOUNDONSTORE "Specified openSUSE version is not found on Microsoft Store."
+!insertmacro LANG_STRING STRING_SYSTEMDRIVE_ENCRYPTED "Because of encryption of system drive, this installer cannot be used for installation to this machine itself."

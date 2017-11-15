@@ -69,3 +69,4 @@
 !insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM_PROCEED "開発者モードを有効にしましたら、 OK ボタンを押してください。"
 !insertmacro LANG_STRING STRING_LINUXONWIN_BEFORESTORE "Microsoft ストアを表示します。 $\"アプリをゲット$\" または $\"インストール$\" を押すと、インストールを行なうことができます。インストールが終わりましたら、スタートメニューから openSUSE を起動できるようになります。"
 !insertmacro LANG_STRING STRING_LINUXONWIN_NOTFOUNDONSTORE "指定した openSUSE のバージョンは Microsoft ストア内に見つかりません。"
+!insertmacro LANG_STRING STRING_SYSTEMDRIVE_ENCRYPTED "システムドライブが暗号化されているため、このインストーラではこのマシン自身にインストールすることができません。"

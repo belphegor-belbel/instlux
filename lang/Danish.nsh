@@ -69,3 +69,4 @@
 !insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM_PROCEED "Tryk på OK-knappen efter udviklertilstand er blevet aktiveret."
 !insertmacro LANG_STRING STRING_LINUXONWIN_BEFORESTORE "Nu åbnes Microsoft Store. Tryk på $\"Hent appen$\" eller $\"installer$\" for at installere. Efter installationen kan du starte openSUSE fra menuen Start."
 !insertmacro LANG_STRING STRING_LINUXONWIN_NOTFOUNDONSTORE "Angivne openSUSE-version findes ikke i Microsoft Store."
+!insertmacro LANG_STRING STRING_SYSTEMDRIVE_ENCRYPTED "Because of encryption of system drive, this installer cannot be used for installation to this machine itself."

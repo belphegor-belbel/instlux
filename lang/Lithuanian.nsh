@@ -69,3 +69,4 @@
 !insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM_PROCEED "Įgalinę programuotojo veikseną, spauskite „Gerai“."
 !insertmacro LANG_STRING STRING_LINUXONWIN_BEFORESTORE "Atveriama „Microsoft“ parduotuvė. Norėdami įdiegti, spauskite „diegti“ („Get the app“ arba „install“). Pasibaigus diegimui, „openSUSE“ sistemą galėsite paleisti per „Pradžios“ meniu."
 !insertmacro LANG_STRING STRING_LINUXONWIN_NOTFOUNDONSTORE "„Microsoft“ parduotuvėje nėra pasirinktos „openSUSE“ versijos."
+!insertmacro LANG_STRING STRING_SYSTEMDRIVE_ENCRYPTED "Because of encryption of system drive, this installer cannot be used for installation to this machine itself."
