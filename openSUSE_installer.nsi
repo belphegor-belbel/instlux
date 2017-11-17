@@ -893,11 +893,11 @@ lbl_loopexitvolumespaces:
       ${EndIf}
 
       ; check BitLocker encryption
-      nsExec::ExecToStack "cmd /c $\"wmic /namespace:\\root\cimv2\Security\MicrosoftVolumeEncryption path Win32_EncryptableVolume where 'DriveLetter = '$systemDrive'' get ConversionStatus /value | findstr ^ConversionStatus=$\""
+      nsExec::ExecToStack "cmd /c $\"wmic /namespace:\\root\cimv2\Security\MicrosoftVolumeEncryption path Win32_EncryptableVolume where 'DriveLetter = '$systemDrive'' call GetConversionStatus | findstr /C:$\"ConversionStatus = $\"$\""
       Pop $1
       Pop $2
       ${If} $1 = 0
-        ${If} $2 != "ConversionStatus=0$\r$\r$\n"
+        ${If} $2 != "$\r$\n$\tConversionStatus = 0;$\r$\n"
           MessageBox MB_OK|MB_ICONSTOP $(STRING_SYSTEMDRIVE_ENCRYPTED)
           Abort
         ${EndIf}
