@@ -1070,8 +1070,31 @@ Section "Install"
     ${If} $0 == "cancel"
       Abort
     ${ElseIf} $0 != "success"
-      MessageBox MB_OK|MB_ICONSTOP "iso $(STRING_DOWNLOADERROR_R1)"
-      Abort
+      ; try again with "-Current"
+      StrCpy $0 $distribution 14
+      ${If} $distribution == "openSUSE Tumbleweed"
+        MessageBox MB_OK|MB_ICONSTOP "iso $(STRING_DOWNLOADERROR_R1)"
+        Abort
+      ${ElseIf} $0 == "openSUSE Leap "
+        ; openSUSE Leap
+        StrCpy $R3 $distribution 255 14
+        StrCpy $R1 "http://download.opensuse.org/distribution/leap/$R3/iso/openSUSE-Leap-$R3-NET-$architecture-Current.iso"
+        StrCpy $R2 "openSUSE-Leap-$R3-NET-$architecture-Current.iso"
+      ${Else}
+        ; openSUSE (before Leap)
+        StrCpy $R3 $distribution 255 9
+        StrCpy $R1 "http://download.opensuse.org/distribution/$R3/iso/openSUSE-$R3-NET-$architecture-Current.iso"
+        StrCpy $R2 "openSUSE-$R3-NET-$architecture-Current.iso"
+      ${EndIf}
+
+      NSISdl::download $R1 "$dirVM\$R2"
+      Pop $0
+      ${If} $0 == "cancel"
+        Abort
+      ${ElseIf} $0 != "success"
+        MessageBox MB_OK|MB_ICONSTOP "iso $(STRING_DOWNLOADERROR_R1)"
+        Abort
+      ${EndIf}
     ${EndIf}
 
     ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)
