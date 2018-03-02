@@ -956,6 +956,15 @@ Function "ShowVirtualMachineSettings"
     WriteIniStr ${VIRTSET_INI} "Field 6" "State" "$diskVM"
   ${Else}
     WriteIniStr ${VIRTSET_INI} "Field 6" "State" "8192"
+
+    ; Increase to 10GB for Leap 15.0 or later
+    StrCpy $0 $distribution 14
+    ${If} $0 == "openSUSE Leap "
+      StrCpy $R3 $distribution 255 14
+      ${If} $R3 < 42
+        WriteIniStr ${VIRTSET_INI} "Field 6" "State" "10240"
+      ${EndIf}
+    ${EndIf}
   ${EndIf}
 
   ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
