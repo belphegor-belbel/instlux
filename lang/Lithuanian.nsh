@@ -67,6 +67,6 @@
 !insertmacro LANG_STRING STRING_LINUXONWINREBOOTREQUIRED "Sėkmingai įdiegta „Windows“ posistemė, leidžianti naudoti „Linux“ sistemas. Iš naujo paleiskite kompiuterį ir iš naujo paleiskite šią diegyklę."
 !insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM "„Linux“ sistemų naudojimas „Windows“ gimtojoje posistemėje įmanomas tik įgalinus programuotojo veikseną (angl. developer mode). Atverti konfigūravimo langą?"
 !insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM_PROCEED "Įgalinę programuotojo veikseną, spauskite „Gerai“."
-!insertmacro LANG_STRING STRING_LINUXONWIN_BEFORESTORE "Atveriama „Microsoft“ parduotuvė. Norėdami įdiegti, spauskite „diegti“ („Get the app“ arba „install“). Pasibaigus diegimui, „openSUSE“ sistemą galėsite paleisti per „Pradžios“ meniu."
+!insertmacro LANG_STRING STRING_LINUXONWIN_BEFORESTORE "Atveriama „Microsoft“ parduotuvė. Norėdami įdiegti, spauskite „diegti“ („Get the app“ arba „install“). Pasibaigus diegimui, „openSUSE“ sistemą galėsite paleisti per „Pradžios“ meniu.$\r$\n$\r$\nNote: This store app is not an official distribution."
 !insertmacro LANG_STRING STRING_LINUXONWIN_NOTFOUNDONSTORE "„Microsoft“ parduotuvėje nėra pasirinktos „openSUSE“ versijos."
 !insertmacro LANG_STRING STRING_SYSTEMDRIVE_ENCRYPTED "Because of encryption of system drive, this installer cannot be used for installation to this machine itself."

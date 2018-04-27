@@ -67,6 +67,6 @@
 !insertmacro LANG_STRING STRING_LINUXONWINREBOOTREQUIRED "Windows Subsystem for Linux のインストールを行ないました。いったんシステムを再起動し、再度セットアップを実行してください。"
 !insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM "Windows Subsystem for Linux を使用するには、開発者モードを有効化しなければなりません。設定ダイアログを表示しますか？"
 !insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM_PROCEED "開発者モードを有効にしましたら、 OK ボタンを押してください。"
-!insertmacro LANG_STRING STRING_LINUXONWIN_BEFORESTORE "Microsoft ストアを表示します。 $\"アプリをゲット$\" または $\"インストール$\" を押すと、インストールを行なうことができます。インストールが終わりましたら、スタートメニューから openSUSE を起動できるようになります。"
+!insertmacro LANG_STRING STRING_LINUXONWIN_BEFORESTORE "Microsoft ストアを表示します。 $\"アプリをゲット$\" または $\"インストール$\" を押すと、インストールを行なうことができます。インストールが終わりましたら、スタートメニューから openSUSE を起動できるようになります。$\r$\n$\r$\n注意: このストアアプリは公式のディストリビューションではありません。"
 !insertmacro LANG_STRING STRING_LINUXONWIN_NOTFOUNDONSTORE "指定した openSUSE のバージョンは Microsoft ストア内に見つかりません。"
 !insertmacro LANG_STRING STRING_SYSTEMDRIVE_ENCRYPTED "システムドライブが暗号化されているため、このインストーラではこのマシン自身にインストールすることができません。"
