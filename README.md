@@ -12,6 +12,14 @@ installation.
 In addition, if your computer cannot boot from CD nor DVD for some reason,
 instlux can help you, too.
 
+## note
+Instlux only prepares the installation environment.
+It does not handle an installation process itself and does not cover an uninstallation.
+
+If you want to uninstall Linux with dual boot setting,
+please remove Linux partitions and fix bootloader manually.
+(Fixing bootloader probably need to run Windows setup which is holded in installation DVD or recovery partition).
+
 ## see also
 https://en.opensuse.org/SDB:Instlux
 
