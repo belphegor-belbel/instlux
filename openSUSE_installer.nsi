@@ -836,25 +836,6 @@ lbl_installlinuxonwin:
       Quit
     ${EndIf}
 
-    ; check whether developer license is enabled or not
-    ${RunPowerShellCmd} "try { (Get-WindowsDeveloperLicense).IsValid } catch [System.InvalidOperationException] { $\"False$\" }"
-    Pop $0
-    ${If} $0 != "True$\r$\n"
-      MessageBox MB_OKCANCEL|MB_ICONINFORMATION $(STRING_LINUXONWIN_DEVLICENSECONFIRM) \
-        IDOK lbl_enabledevelopermode
-        Abort
-
-lbl_enabledevelopermode:
-      ${Do}
-        ${RunPowerShellCmd} "Show-WindowsDeveloperLicenseRegistration"
-
-        MessageBox MB_OK|MB_ICONINFORMATION $(STRING_LINUXONWIN_DEVLICENSECONFIRM_PROCEED) \
-
-        ${RunPowerShellCmd} "try { (Get-WindowsDeveloperLicense).IsValid } catch [System.InvalidOperationException] { $\"False$\" }"
-        Pop $0
-      ${LoopUntil} $0 == "True$\r$\n"
-    ${EndIf}
-
     MessageBox MB_OKCANCEL|MB_ICONQUESTION|MB_DEFBUTTON2 $(STRING_STARTCONFIRM) \
       IDOK leavedist_ok_linuxonwin
     Abort

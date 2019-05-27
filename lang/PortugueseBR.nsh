@@ -65,8 +65,6 @@
 !insertmacro LANG_STRING STRING_LINUXONWININSTALLATIONCONFIRM "Windows Subsystem for Linux is not installed. Install? (system will have to be rebooted)"
 !insertmacro LANG_STRING STRING_LINUXONWININSTALLFAILED "Windows Subsystem for Linux installation failed: $0"
 !insertmacro LANG_STRING STRING_LINUXONWINREBOOTREQUIRED "Windows Subsystem for Linux installed successfully. Please reboot your system and run this setup again."
-!insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM "In order to use Windows Subsystem for Linux, developer mode must be enabled. Show configuration dialog?"
-!insertmacro LANG_STRING STRING_LINUXONWIN_DEVLICENSECONFIRM_PROCEED "Push OK button after enabling developer mode."
 !insertmacro LANG_STRING STRING_LINUXONWIN_BEFORESTORE "Now opening Microsoft Store. Push $\"Get the app$\" or $\"install$\" to install. After installation, you can start openSUSE from start menu.$\r$\n$\r$\nNote: This store app is not an official distribution."
 !insertmacro LANG_STRING STRING_LINUXONWIN_NOTFOUNDONSTORE "Specified openSUSE version is not found on Microsoft Store."
 !insertmacro LANG_STRING STRING_SYSTEMDRIVE_ENCRYPTED "Because of encryption of system drive, this installer cannot be used for installation to this machine itself."
