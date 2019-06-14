@@ -203,6 +203,10 @@ Function .onInit
     StrCpy $systemDrive "C:"
   ${EndIf}
 
+  ; SetOutPath should be executed before any CMD.exe execution;
+  ; CMD.exe may cause error if openSUSE_installer.exe is run in UNC path.
+  SetOutPath $INSTDIR
+
   Call GetSystemMemoryInfo
   StrCpy $R0 768
   ${If} $4 L< $R0
@@ -1215,8 +1219,6 @@ lbl_hyperverrorsnodelete:
 
     Return
   ${EndIf}
-
-  SetOutPath $INSTDIR
 
   StrLen $1 $(STRING_VERSIONOFTHISMEDIA)
   StrCpy $0 $distribution $1
