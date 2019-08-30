@@ -342,7 +342,7 @@ Function "ShowDistributionSelection"
 
     ; set currently supported versions
     WriteIniStr ${DISTSELECT_INI} "Field 2" "ListItems" \
-      "$R1openSUSE Leap 15.1|openSUSE Leap 15.0|openSUSE Tumbleweed|openSUSE Leap 42.3"
+      "$R1openSUSE Leap 15.2|openSUSE Leap 15.1|openSUSE Leap 15.0|openSUSE Tumbleweed|openSUSE Leap 42.3"
   ${Else}
     ; when x86_64 is not supported..
 
