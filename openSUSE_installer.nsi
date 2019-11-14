@@ -479,7 +479,7 @@ lbl_powershellvbox:
 lbl_installvbox:
       ; check the latest version
       ; (NSISdl cannot be used because it does not support HTTPS...)
-      StrCpy $R2 "https://update.virtualbox.org/query.php?platform=WINDOWS_32BITS_GENERIC&version=1.0.0"
+      StrCpy $R2 "https://update.virtualbox.org/query.php?platform=WINDOWS_64BITS_GENERIC&version=1.0.0"
       ${RunPowerShellCmd} "(new-object System.Net.WebClient).Downloadfile($\"$R2$\", $\"$TEMP\vbox-latest.txt$\")"
       Pop $0
       ${IfNot} $0 == ""
