@@ -868,7 +868,7 @@ lbl_loopexitvolumespaces:
 
       ; check whether UEFI boot mode is activated or not
       ExpandEnvStrings $0 %COMSPEC%
-      nsExec::ExecToStack '"$0" /C "$bcdedit /store $bcdStore /enum bootmgr | findstr /I ^path | findstr /I \.efi$$"'
+      nsExec::ExecToStack '"$0" /C "$bcdedit /enum bootmgr | findstr /I ^path | findstr /I \.efi$$"'
       Pop $1
       Pop $1
       StrLen $0 $1
