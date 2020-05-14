@@ -1035,6 +1035,9 @@ FunctionEnd ; "CheckBootloader"
 Section "Install"
   SectionIn RO
 
+  # libwinpthread-1.dll is required to run a DLL compiled with mingw
+  File /oname=$PLUGINSDIR\libwinpthread-1.dll /usr/i686-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll
+
   ${If} $environment == $(STRING_ENVIRONMENTSELECTITEM_VIRTUALBOX)
   ${OrIf} $environment == $(STRING_ENVIRONMENTSELECTITEM_HYPERV)
     ; download NET iso
