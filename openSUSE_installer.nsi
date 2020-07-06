@@ -342,7 +342,7 @@ Function "ShowDistributionSelection"
 
     ; set currently supported versions
     WriteIniStr ${DISTSELECT_INI} "Field 2" "ListItems" \
-      "$R1openSUSE Leap 15.2|openSUSE Leap 15.1|openSUSE Leap 15.0|openSUSE Tumbleweed|openSUSE Leap 42.3"
+      "$R1openSUSE Leap 15.3|openSUSE Leap 15.2|openSUSE Leap 15.1|openSUSE Leap 15.0|openSUSE Tumbleweed|openSUSE Leap 42.3"
   ${Else}
     ; when x86_64 is not supported..
 
@@ -1213,6 +1213,10 @@ lbl_hyperverrorsnodelete:
       ; open Microsoft Store
       MessageBox MB_OK|MB_ICONINFORMATION "$(STRING_LINUXONWIN_BEFORESTORE)"
       ExecShell "open" "https://www.microsoft.com/store/p/app/9njfzk00fgkv"
+    ${ElseIf} $distribution == "openSUSE Leap 15.2"
+      ; open Microsoft Store
+      MessageBox MB_OK|MB_ICONINFORMATION "$(STRING_LINUXONWIN_BEFORESTORE)"
+      ExecShell "open" "https://www.microsoft.com/store/p/app/9mzd0n9z4m4h"
     ${Else}
       MessageBox MB_OK|MB_ICONSTOP "$(STRING_LINUXONWIN_NOTFOUNDONSTORE)"
     ${EndIf}
