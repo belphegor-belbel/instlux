@@ -26,6 +26,7 @@ Var nameVM
 Var memoryVM
 Var diskVM
 Var switchVM
+Var buildNum
 
 ; -----------------------------------------------------------------------------
 ; definitions
@@ -805,14 +806,20 @@ lbl_powershelllinuxonwin:
 
     ; check operating system (Windows 10 version 10.0.16226 or later required)
     ${RunPowerShellCmd} "[System.Environment]::OSVersion.Version.Build"
-    Pop $0
-    ${If} $0 < 16226
+    Pop $buildNum
+    ${If} $buildNum < 16226
       MessageBox MB_OK|MB_ICONSTOP $(STRING_LINUXONWIN_OSFAILED)
       Abort
     ${EndIf}
 
     ; check whether Linux subsystem is installed or not
-    ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State"
+    ${If} $buildNum < 22000
+      ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State"
+    ${Else}
+      ; if Windows 11 (version 10.0.22000 or later) is installed,
+      ; VirtualMachinePlatform is also required (i.e. only supports WSL2).
+      ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State -and (Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform).State"
+    ${EndIf}
     Pop $0
     ${If} $0 == "Disabled$\r$\n"
       MessageBox MB_OKCANCEL|MB_ICONQUESTION $(STRING_LINUXONWININSTALLATIONCONFIRM) \
@@ -820,7 +827,13 @@ lbl_powershelllinuxonwin:
         Abort
 
 lbl_installlinuxonwin:
-      ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart).Online 3> $$null"
+      ${If} $buildNum < 22000
+        ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart).Online 3> $$null"
+      ${Else}
+        ; if Windows 11 (version 10.0.22000 or later) is installed,
+	; VirtualMachinePlatform is also required (i.e. only supports WSL2).
+        ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart).Online -and (Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart).Online 3> $$null"
+      ${EndIf}
       Pop $0
       ${If} $0 != "True$\r$\n"
         MessageBox MB_OK|MB_ICONSTOP $(STRING_LINUXONWININSTALLFAILED)
@@ -832,7 +845,13 @@ lbl_installlinuxonwin:
     ${EndIf}
 
     ; check reboot is needed or not
-    ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart).RestartNeeded 3> $$null"
+    ${If} $buildNum < 22000
+      ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart).RestartNeeded 3> $$null"
+    ${Else}
+      ; if Windows 11 (version 10.0.22000 or later) is installed,
+      ; VirtualMachinePlatform is also required (i.e. only supports WSL2).
+      ${RunPowerShellCmd} "(Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart).RestartNeeded -or (Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart).RestartNeeded 3> $$null"
+    ${EndIf}
     Pop $0
     ${If} $0 == "True$\r$\n"
       MessageBox MB_OK|MB_ICONINFORMATION $(STRING_LINUXONWINREBOOTREQUIRED)
