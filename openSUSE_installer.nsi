@@ -1218,6 +1218,23 @@ lbl_hyperverrorsnodelete:
       Abort
     ${EndIf}
   ${ElseIf} $environment == $(STRING_ENVIRONMENTSELECTITEM_LINUXONWINDOWS)
+    ; if Windows 11 (version 10.0.22000 or later) is installed,
+    ; kernel package must be installed
+    ${If} $buildNum >= 22000
+      ; "Lxss" regitry is only available for 64bit view
+      SetRegView 64
+      ReadRegStr $0 HKLM \
+        "SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss" "KernelVersion"
+
+      StrLen $1 $0
+      ${If} $1 < 1
+	Banner::show /set 76 $(STRING_BANNER_WAITINGTITLE) $(STRING_BANNER_WAITING_TEXT)
+	; wsl.exe is available under sysnative
+        nsExec::Exec '$\"$WINDIR\Sysnative\wsl.exe$\" --update'
+	Banner::destroy
+      ${EndIf}
+    ${EndIf}
+
     ${If} $distribution == "openSUSE Leap 42.1"
     ${OrIf} $distribution == "openSUSE Leap 42.2"
     ${OrIf} $distribution == "openSUSE Leap 42.3"
