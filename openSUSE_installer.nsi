@@ -814,14 +814,14 @@ lbl_powershelllinuxonwin:
 
     ; check whether Linux subsystem is installed or not
     ${If} $buildNum < 22000
-      ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State"
+      ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State -and 1"
     ${Else}
       ; if Windows 11 (version 10.0.22000 or later) is installed,
       ; VirtualMachinePlatform is also required (i.e. only supports WSL2).
       ${RunPowerShellCmd} "(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State -and (Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform).State"
     ${EndIf}
     Pop $0
-    ${If} $0 == "Disabled$\r$\n"
+    ${If} $0 == "False$\r$\n"
       MessageBox MB_OKCANCEL|MB_ICONQUESTION $(STRING_LINUXONWININSTALLATIONCONFIRM) \
         IDOK lbl_installlinuxonwin
         Abort
@@ -839,7 +839,7 @@ lbl_installlinuxonwin:
         MessageBox MB_OK|MB_ICONSTOP $(STRING_LINUXONWININSTALLFAILED)
         Abort
       ${EndIf}
-    ${ElseIf} $0 != "Enabled$\r$\n"
+    ${ElseIf} $0 != "True$\r$\n"
       MessageBox MB_OK|MB_ICONSTOP "$(STRING_LINUXONWINCHECKFAILED)"
       Abort
     ${EndIf}
