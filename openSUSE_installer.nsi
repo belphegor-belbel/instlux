@@ -1,6 +1,8 @@
 ; openSUSE installer instlux-ng NSIS script
 ; -----------------------------------------------------------------------------
 
+Unicode false
+
 !include "MUI.nsh"
 !include "x64.nsh"
 !include "LogicLib.nsh"
@@ -47,7 +49,6 @@ AllowRootDirInstall true
 InstallDir "C:\openSUSE"
 XPStyle on
 SetCompressor /SOLID lzma
-Unicode false
 
 !define MUI_ICON "opensuse.ico"
 !define MUI_UNICON "opensuse.ico"
