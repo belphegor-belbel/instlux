@@ -47,6 +47,7 @@ AllowRootDirInstall true
 InstallDir "C:\openSUSE"
 XPStyle on
 SetCompressor /SOLID lzma
+Unicode false
 
 !define MUI_ICON "opensuse.ico"
 !define MUI_UNICON "opensuse.ico"
