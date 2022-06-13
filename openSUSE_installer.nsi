@@ -1259,6 +1259,10 @@ lbl_hyperverrorsnodelete:
       ; open Microsoft Store
       MessageBox MB_OK|MB_ICONINFORMATION "$(STRING_LINUXONWIN_BEFORESTORE)"
       ExecShell "open" "https://www.microsoft.com/store/p/app/9n6j06bmcgt3"
+    ${ElseIf} $distribution == "openSUSE Leap 15.4"
+      ; open Microsoft Store
+      MessageBox MB_OK|MB_ICONINFORMATION "$(STRING_LINUXONWIN_BEFORESTORE)"
+      ExecShell "open" "https://www.microsoft.com/store/p/app/9pjpfjhrm62v"
     ${Else}
       MessageBox MB_OK|MB_ICONSTOP "$(STRING_LINUXONWIN_NOTFOUNDONSTORE)"
     ${EndIf}
