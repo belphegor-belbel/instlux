@@ -334,7 +334,7 @@ Function "ShowDistributionSelection"
     ${If} $mediaVer == ""
     ${OrIf} $mediaX86_64 == "0"
       ; set the latest stable version
-      WriteIniStr ${DISTSELECT_INI} "Field 2" "State" "openSUSE Leap 15.5"
+      WriteIniStr ${DISTSELECT_INI} "Field 2" "State" "openSUSE Leap 15.6"
       StrCpy $R1 ""
     ${Else}
       ; set the version of this media
