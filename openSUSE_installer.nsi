@@ -661,7 +661,7 @@ lbl_powershellhyperv:
 
 lbl_installhyperv:
       ; check CPU support (Virtualization)
-      ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).VirtualizationFirmwareEnabled"
+      ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).VirtualizationFirmwareEnabled -notcontains $false"
       Pop $0
       ${If} $0 == "False$\r$\n"
         MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_VTDISABLED)
@@ -672,7 +672,7 @@ lbl_installhyperv:
       ${EndIf}
 
       ; check CPU support (Second Level Address Translation)
-      ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).SecondLevelAddressTranslationExtensions"
+      ${RunPowerShellCmd} "(Get-WmiObject WIN32_Processor).SecondLevelAddressTranslationExtensions -notcontains $false"
       Pop $0
       ${If} $0 == "False$\r$\n"
         MessageBox MB_OK|MB_ICONSTOP $(STRING_HYPERV_SLATDISABLED)
